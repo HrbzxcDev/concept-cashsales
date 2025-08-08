@@ -30,16 +30,18 @@ import {
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
 import { ChevronRight, ChevronsUpDown } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
 import SearchInput from '../ui/search-input';
-import ThemeToggle from '../theme-toggle/theme-toggle';
+import ThemeToggle from './ThemeToggle/theme-toggle';
+import { UserNav } from './user-nav';
 
 export const company = {
-  name: 'Cash Sales',
+  name: 'SecureLend',
   logo: () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -62,18 +64,19 @@ export default function AppSidebar({
 }: {
   children: React.ReactNode;
 }) {
+  // const AppSidebar = async ({ children }: { children: ReactNode }) => {
+  const [mounted, setMounted] = React.useState(false);
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  //* Only render after first client-side mount
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    const [mounted, setMounted] = React.useState(false);
-
-    const pathname = usePathname();
-    //* Only render after first client-side mount
-    React.useEffect(() => {
-      setMounted(true);
-    }, []);
-  
-    if (!mounted) {
-      return null; // or a loading skeleton
-    }
+  if (!mounted) {
+    return null; // or a loading skeleton
+  }
+  // if (session)
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -161,16 +164,21 @@ export default function AppSidebar({
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="https://github.com/shadcn.png" />
+                      <AvatarImage
+                        src={session?.user?.image || ''}
+                        alt={session?.user?.name || ''}
+                      />
                       <AvatarFallback className="rounded-lg">
-                        CN
+                        {session?.user?.name?.slice(0, 2)?.toUpperCase() ||
+                          'CN'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">
-                        Admin
+                        {session?.user?.name || ''}
                       </span>
                       <span className="truncate text-xs">
-                        admin@admin.com
+                        {session?.user?.email || ''}
                       </span>
                     </div>
                     <ChevronsUpDown className="ml-auto size-4" />
@@ -244,7 +252,8 @@ export default function AppSidebar({
             <SearchInput />
           </div>
           <div className="flex items-center gap-2 px-4">
-              <ThemeToggle />
+            <ThemeToggle />
+            <UserNav />
           </div>
         </header>
         {/* page main content */}

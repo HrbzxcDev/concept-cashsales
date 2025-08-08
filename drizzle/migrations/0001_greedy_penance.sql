@@ -1,0 +1,1 @@
+ALTER TABLE "tblpenalty" ADD COLUMN "datepaid" date NOT NULL;
