@@ -1,14 +1,7 @@
-import { auth } from '@/auth'; // Ensure you import auth
-import { redirect } from 'next/navigation'; // Ensure you import redirect
+import { redirect } from 'next/navigation';
 
-const Home = async () => {
-  const session = await auth(); // Fetch the session
-  // console.log('Session:', session); // Log the session value
-  if (!session) {
-    return redirect('/sign-in'); // Redirect to sign-in if no session
-  } else {
-    return redirect('./dashboard'); // Redirect to dashboard if session exists
-  }
+const Home = () => {
+  return redirect('./dashboard');
 };
 
 export default Home;

@@ -17,7 +17,9 @@
     "db:studio": "npx drizzle-kit studio",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
-    "email": "email dev --dir app/email"
+    "email": "email dev --dir app/email",
+    "cron:start": "tsx scripts/init-cron.ts",
+    "cron:dev": "tsx watch scripts/init-cron.ts"
   },
   "lint-staged": {
     "**/*": [
@@ -59,6 +61,7 @@
     "@radix-ui/react-tooltip": "^1.1.7",
     "@react-email/components": "0.0.33",
     "@tanstack/react-table": "^8.20.6",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
     "@upstash/ratelimit": "^2.0.5",
@@ -85,6 +88,7 @@
     "next-auth": "^5.0.0-beta.25",
     "next-themes": "^0.2.1",
     "nextjs-toploader": "^1.6.12",
+    "node-cron": "^4.2.1",
     "nuqs": "^1.19.1",
     "pg": "^8.13.1",
     "postcss": "^8.4.47",
@@ -105,7 +109,6 @@
     "tailwind-merge": "^1.14.0",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "tsx": "^4.19.2",
     "typescript": "5.2.2",
     "uuid": "^9.0.1",
     "zod": "^3.24.1",
@@ -124,7 +127,8 @@
     "lint-staged": "^15.2.7",
     "prettier": "3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.14",
-    "react-email": "3.0.7"
+    "react-email": "3.0.7",
+    "tsx": "^4.20.3"
   },
   "browser": {
     "crypto": false

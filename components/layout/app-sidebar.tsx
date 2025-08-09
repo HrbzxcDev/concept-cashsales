@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
 import { ChevronRight, ChevronsUpDown } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
@@ -38,7 +37,6 @@ import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
 import SearchInput from '../ui/search-input';
 import ThemeToggle from './ThemeToggle/theme-toggle';
-import { UserNav } from './user-nav';
 
 export const company = {
   name: 'SecureLend',
@@ -66,7 +64,6 @@ export default function AppSidebar({
 }) {
   // const AppSidebar = async ({ children }: { children: ReactNode }) => {
   const [mounted, setMounted] = React.useState(false);
-  const { data: session } = useSession();
   const pathname = usePathname();
   //* Only render after first client-side mount
   React.useEffect(() => {
@@ -164,21 +161,16 @@ export default function AppSidebar({
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="https://github.com/shadcn.png" />
-                      <AvatarImage
-                        src={session?.user?.image || ''}
-                        alt={session?.user?.name || ''}
-                      />
                       <AvatarFallback className="rounded-lg">
-                        {session?.user?.name?.slice(0, 2)?.toUpperCase() ||
-                          'CN'}
+                        HD
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">
-                        {session?.user?.name || ''}
+                        HrbzxcDev
                       </span>
                       <span className="truncate text-xs">
-                        {session?.user?.email || ''}
+                        hrbzxcdev@gmail.com
                       </span>
                     </div>
                     <ChevronsUpDown className="ml-auto size-4" />
@@ -253,7 +245,6 @@ export default function AppSidebar({
           </div>
           <div className="flex items-center gap-2 px-4">
             <ThemeToggle />
-            <UserNav />
           </div>
         </header>
         {/* page main content */}
