@@ -27,3 +27,13 @@ export async function gettotalbranch() {
     return 0;
   }
 }
+
+export async function getCashsalesData() {
+  try {
+    const result = await db.select().from(cashsalesTable).limit(20);
+    return result;
+  } catch (error) {
+    console.error('Error getting cashsales data:', error);
+    return [];
+  }
+}

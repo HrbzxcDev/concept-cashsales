@@ -4,16 +4,16 @@ import { eq } from 'drizzle-orm';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  'https://dev-api.qne.cloud/api/CashSales';
+  'https://dev-api.qne.cloud/api/cashsales';
 
 // Define the type for cash sales data from API
 export interface CashSaleAPI {
   id: string;
   cashsalesid: string;
   cashsalesdate: string;
-  cashsalescode: string;
+  cashsalescode?: string; // Optional since API might not provide this
   customer: string;
-  stocklocation: string;
+  stocklocation?: string; // Optional since API might not provide this
   status: boolean;
   // Add more fields as needed based on your API response
 }
@@ -23,9 +23,9 @@ export interface CashSaleDB {
   id: string;
   cashsalesid: string;
   cashsalesdate: string;
-  cashsalescode: string;
+  cashsalescode: string; // Empty string if not provided by API
   customer: string;
-  stocklocation: string;
+  stocklocation: string; // Empty string if not provided by API
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -54,12 +54,15 @@ export interface FetchAndSaveOptions {
 function transformAPIToDB(
   apiData: CashSaleAPI
 ): Omit<CashSaleDB, 'id' | 'createdAt' | 'updatedAt'> {
+  // Note: cashsalescode and stocklocation are now optional
+  // They can be null if not provided by the API
+  
   return {
     cashsalesid: apiData.cashsalesid,
     cashsalesdate: apiData.cashsalesdate,
-    cashsalescode: apiData.cashsalescode,
+    cashsalescode: apiData.cashsalescode || '',
     customer: apiData.customer,
-    stocklocation: apiData.stocklocation,
+    stocklocation: apiData.stocklocation || '',
     status: apiData.status
   };
 }
@@ -76,7 +79,7 @@ export async function fetchAndSaveCashSales(
     dateFrom,
     dateTo,
     upsert = false,
-    batchSize = 50
+    batchSize = 100
   } = options;
 
   try {

@@ -1,0 +1,1 @@
+ALTER TABLE "tblcashsales" ALTER COLUMN "status" SET DEFAULT true;

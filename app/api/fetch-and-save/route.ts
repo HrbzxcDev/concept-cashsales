@@ -51,7 +51,7 @@ function transformAPIToDB(apiData: any) {
   // Helper function to validate and format date
   function formatDate(dateValue: any): string {
     if (!dateValue || String(dateValue).trim() === '') {
-      return new Date().toISOString().split('T')[0]; // Return today's date as default
+      throw new Error('Date value is required but not provided');
     }
 
     const dateStr = String(dateValue).trim();
@@ -60,26 +60,24 @@ function transformAPIToDB(apiData: any) {
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) {
-        console.warn(`Invalid date format: ${dateStr}, using today's date`);
-        return new Date().toISOString().split('T')[0];
+        throw new Error(`Invalid date format: ${dateStr}`);
       }
       return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
     } catch (error) {
-      console.warn(`Error parsing date: ${dateStr}, using today's date`, error);
-      return new Date().toISOString().split('T')[0];
+      throw new Error(`Error parsing date: ${dateStr} - ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   return {
     cashsalesid: cashsalesid,
     cashsalesdate: formatDate(
-      apiData.cashsalesdate || apiData.cashsales_date || apiData.date
+      apiData.cashsalesdate || apiData.cashsales_date || apiData.cashSalesDate || apiData.date
     ),
     cashsalescode:
-      apiData.cashsalescode || apiData.cashsales_code || apiData.code || '',
-    customer: apiData.customer || apiData.customer_name || apiData.cust || '',
+      apiData.cashsalescode || apiData.cashsales_code || apiData.cashSalesCode || apiData.code || '',
+    customer: apiData.customer || apiData.customer_name || apiData.customerName || apiData.cust || '',
     stocklocation:
-      apiData.stocklocation || apiData.stock_location || apiData.location || '',
+      apiData.stocklocation || apiData.stock_location || apiData.stockLocation || apiData.location || '',
     status: apiData.status || apiData.is_active || false
   };
 }
@@ -92,7 +90,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     // Get query parameters
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '1000');
     const upsert = searchParams.get('upsert') === 'true';
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -110,7 +108,9 @@ export async function GET(request: NextRequest) {
 
     // Build query parameters for external API
     const queryParams = new URLSearchParams();
-    queryParams.append('limit', limit.toString());
+    if (limit > 0) {
+      queryParams.append('limit', limit.toString());
+    }
 
     if (dateFrom) {
       queryParams.append('dateFrom', dateFrom);
@@ -223,6 +223,16 @@ export async function GET(request: NextRequest) {
       try {
         // Log the raw item for debugging
         console.log('Processing item:', JSON.stringify(item, null, 2));
+
+            // Log the raw item before transformation for debugging
+        console.log('=== DEBUGGING EMPTY FIELDS ===');
+        console.log('Raw API item:', JSON.stringify(item, null, 2));
+        console.log('Available fields in item:', Object.keys(item || {}));
+        console.log('cashsalescode field:', item?.cashsalescode);
+        console.log('customer field:', item?.customer);
+        console.log('stocklocation field:', item?.stocklocation);
+        console.log('status field:', item?.status);
+        console.log('=== END DEBUG ===');
 
         const transformedData = transformAPIToDB(item);
         console.log(

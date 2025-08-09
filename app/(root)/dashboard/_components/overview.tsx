@@ -1,86 +1,26 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { gettotaltrans, gettotalbranch } from '@/actions/getdata';
 import { TrendingUp, TrendingDown, ShoppingCart, Activity } from 'lucide-react';
+import { DataTable } from '@/app/(root)/cashsales-table/_components/cashsales-tables/data-table';
+import { Cashsalescolumns } from '@/app/(root)/cashsales-table/_components/cashsales-tables/columns';
 
-export default function Overview() {
-  const [totalTransactions, setTotalTransactions] = useState<number>(0);
-  const [totalBranch, settotalBranch] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface OverviewProps {
+  totalTransactions: number;
+  totalBranch: number;
+  cashsalesData: any[];
+}
 
-  useEffect(() => {
-    const fetchTotalTrans = async () => {
-      try {
-        setLoading(true);
-        const totaltrans = await gettotaltrans();
-        setTotalTransactions(Number(totaltrans));
-      } catch (error) {
-        console.error('Error fetching total transactions:', error);
-        setError('Failed to fetch total transactions');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    const fetchTotalBranch = async () => {
-      try {
-        setLoading(true);
-        const totalbranch = await gettotalbranch();
-        settotalBranch(Number(totalbranch));
-      } catch (error) {
-        console.error('Error fetching total branch:', error);
-        setError('Failed to fetch total branch');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTotalTrans();
-    fetchTotalBranch();
-  }, []);
-
+export default function Overview({ totalTransactions, totalBranch, cashsalesData }: OverviewProps) {
   // Mock percentage change functions (you can replace with real data)
   const getPercentageChangeTransactions = () => 8.7;
   const getPercentageChangeActivity = () => 15.2;
-
-  if (loading) {
-    return (
-      <PageContainer scrollable>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="h-32 animate-pulse rounded-lg bg-muted"></div>
-          <div className="h-32 animate-pulse rounded-lg bg-muted"></div>
-          <div className="h-32 animate-pulse rounded-lg bg-muted"></div>
-          <div className="h-32 animate-pulse rounded-lg bg-muted"></div>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <PageContainer scrollable>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="col-span-full">
-            <div className="rounded-lg border border-destructive p-4">
-              <p className="text-destructive">Error: {error}</p>
-            </div>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
 
   return (
     <PageContainer scrollable>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="h-full w-full rounded-md bg-white dark:bg-neutral-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">  
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Transactions
             </CardTitle>
@@ -88,11 +28,7 @@ export default function Overview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? (
-                <Skeleton className="h-8 w-[200px] sm:w-[100px] md:w-[100px] lg:w-[240px]" />
-              ) : (
-                totalTransactions
-              )}
+              {totalTransactions}
             </div>
             <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
               <Badge
@@ -124,11 +60,7 @@ export default function Overview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? (
-                <Skeleton className="h-8 w-[200px] sm:w-[100px] md:w-[100px] lg:w-[240px]" />
-              ) : (
-                totalTransactions
-              )}
+              {totalTransactions}
             </div>
             <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
               <Badge
@@ -160,11 +92,7 @@ export default function Overview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? (
-                <Skeleton className="h-8 w-[200px] sm:w-[100px] md:w-[100px] lg:w-[240px]" />
-              ) : (
-                totalTransactions
-              )}
+              {totalTransactions}
             </div>
             <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
               <Badge
@@ -196,11 +124,7 @@ export default function Overview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? (
-                <Skeleton className="h-8 w-[200px] sm:w-[100px] md:w-[100px] lg:w-[240px]" />
-              ) : (
-                totalBranch
-              )}
+              {totalBranch}
             </div>
             <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
               <Badge
@@ -222,6 +146,15 @@ export default function Overview() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      {/* Cashsales Table Section */}
+      <div className="mt-8">
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold tracking-tight">Cash Sales</h2>
+          <p className="text-muted-foreground">Recent cash sales transactions</p>
+        </div>
+        <DataTable columns={Cashsalescolumns} data={cashsalesData} />
       </div>
     </PageContainer>
   );

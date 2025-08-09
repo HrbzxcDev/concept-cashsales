@@ -4,8 +4,8 @@ import { ReactNode } from 'react';
 import AppSidebar from '@/components/layout/app-sidebar';
 
 export const metadata: Metadata = {
-  title: 'Lending and Savings Apps',
-  description: 'Lending and Savings Apps'
+  title: 'Concept-CashSales',
+  description: 'Concept-CashSales Dashboard'
 };
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
