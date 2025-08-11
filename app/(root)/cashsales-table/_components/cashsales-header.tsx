@@ -13,21 +13,21 @@ import AddButton from '@/components/animata/button/add-button';
 type CashsalesListingPageProps = {};
 
 export default async function CashsalesListingPage({}: CashsalesListingPageProps) {
-  //* Fetching loans directly from the database using Drizzle
-  let totalServCharge = 0;
-  let ServChargeData: any[] = [];
+  // Fetching loans directly from the database using Drizzle
+  let CashTableData: any[] = [];
+  let recordCount = 0;
 
   try {
-    //* First, get a count of all rows
+    // First, get a count of all rows
     const countResult = await db
       .select({ count: sql`count(*)` })
       .from(cashsalesTable);
-    totalServCharge = Number(countResult[0].count); //* Assign to totalSavings
+    recordCount = Number(countResult[0].count);
 
-    //* Then fetch all rows, ordered by month
-    ServChargeData = await db.select().from(cashsalesTable); //* Adjust the column name if needed
+    // Then fetch all rows, ordered by month
+    CashTableData = await db.select().from(cashsalesTable);
   } catch (error) {
-    toast({ 
+    toast({
       title: 'Error',
       description: 'Error Fetching Record'
     });
@@ -38,13 +38,10 @@ export default async function CashsalesListingPage({}: CashsalesListingPageProps
       <div className="space-y-4">
         <div className="flex place-items-end justify-between">
           <Heading
-            title={`Service Charge ( ${totalServCharge} )`}
+            title={`Service Charge ( ${recordCount} )`}
             description="Manage Service Charge"
           />
-          <AddButton
-            href="/service-charge/new"
-            text="Add Charge"
-          />
+          <AddButton href="/service-charge/new" text="Add Charge" />
         </div>
         <Separator
           className={cn(
@@ -52,7 +49,7 @@ export default async function CashsalesListingPage({}: CashsalesListingPageProps
           )}
         />
         <div className="flex items-start justify-between"></div>
-        <DataTable columns={Cashsalescolumns} data={ServChargeData} />
+        <DataTable columns={Cashsalescolumns} data={CashTableData} />
       </div>
     </PageContainer>
   );

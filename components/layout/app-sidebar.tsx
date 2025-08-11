@@ -39,7 +39,7 @@ import SearchInput from '../ui/search-input';
 import ThemeToggle from './ThemeToggle/theme-toggle';
 
 export const company = {
-  name: 'SecureLend',
+  name: 'Concept CashSales',
   logo: () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -54,7 +54,7 @@ export const company = {
       <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
     </svg>
   ),
-  version: 'Beta (2.8.9)'
+  version: 'Beta (1.2.2)'
 };
 
 export default function AppSidebar({
@@ -83,7 +83,7 @@ export default function AppSidebar({
               <company.logo />
             </div>
             <div className="flex min-w-0 flex-col justify-center">
-              <span className="truncate text-xl font-semibold">
+              <span className="truncate text-lg font-semibold">
                 {company.name}
               </span>
               <span className="truncate text-xs">{company.version}</span>
@@ -161,14 +161,10 @@ export default function AppSidebar({
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="https://github.com/shadcn.png" />
-                      <AvatarFallback className="rounded-lg">
-                        HD
-                      </AvatarFallback>
+                      <AvatarFallback className="rounded-lg">HD</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        HrbzxcDev
-                      </span>
+                      <span className="truncate font-semibold">HrbzxcDev</span>
                       <span className="truncate text-xs">
                         hrbzxcdev@gmail.com
                       </span>

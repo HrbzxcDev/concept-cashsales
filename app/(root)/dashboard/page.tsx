@@ -1,5 +1,5 @@
 import OverViewPage from './_components/overview';
-import { gettotaltrans, gettotalbranch, getCashsalesData } from '@/actions/getdata';
+import { gettotaltrans, gettotalbranch, getCashsalesData, getPercentageChangeTotalTransaction } from '@/actions/getdata';
 
 export const metadata = {
   title: 'Dashboard : Overview'
@@ -7,10 +7,11 @@ export const metadata = {
 
 export default async function Page() {
   // Fetch all data server-side
-  const [totalTransactions, totalBranch, cashsalesData] = await Promise.all([
+  const [totalTransactions, totalBranch, cashsalesData, percentageChangeData] = await Promise.all([
     gettotaltrans(),
     gettotalbranch(),
-    getCashsalesData()
+    getCashsalesData(),
+    getPercentageChangeTotalTransaction()
   ]);
 
   return (
@@ -18,6 +19,7 @@ export default async function Page() {
       totalTransactions={totalTransactions}
       totalBranch={totalBranch}
       cashsalesData={cashsalesData}
+      percentageChangeData={percentageChangeData}
     />
   );
 }

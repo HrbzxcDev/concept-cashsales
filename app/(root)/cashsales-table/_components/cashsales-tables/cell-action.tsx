@@ -19,10 +19,10 @@ import { useToast } from '@/hooks/use-toast';
 interface CellActionProps {
   data: {
     id: string;
-    servdate: string;
-    bank: string;
-    servamount: string;
-    fee: string;
+    cashsalesdate: string;
+    cashsalescode: string;
+    customer: string;
+    stocklocation: string;
     createdAt: Date;
     updatedAt: Date;
   };

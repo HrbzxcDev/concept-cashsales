@@ -12,13 +12,26 @@ import { addDays, format } from 'date-fns';
 import * as React from 'react';
 import { DateRange } from 'react-day-picker';
 
+interface CalendarDateRangePickerProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  date?: DateRange | undefined;
+  onDateChange?: (date: DateRange | undefined) => void;
+}
+
 export function CalendarDateRangePicker({
-  className
-}: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2023, 0, 20),
-    to: addDays(new Date(2023, 0, 20), 20)
-  });
+  className,
+  date,
+  onDateChange
+}: CalendarDateRangePickerProps) {
+  const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(
+    {
+      from: new Date(),
+      to: addDays(new Date(), 0)
+    }
+  );
+
+  const selectedDate = date ?? internalDate;
+  const handleDateChange = onDateChange ?? setInternalDate;
 
   return (
     <div className={cn('grid gap-2', className)}>
@@ -28,19 +41,19 @@ export function CalendarDateRangePicker({
             id="date"
             variant={'outline'}
             className={cn(
-              'w-[260px] justify-start text-left font-normal',
-              !date && 'text-muted-foreground'
+              'h-full w-full justify-start text-left font-normal',
+              !selectedDate && 'text-muted-foreground'
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
+            <CalendarIcon className="mr-4 h-4 w-4" />
+            {selectedDate?.from ? (
+              selectedDate.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} -{' '}
-                  {format(date.to, 'LLL dd, y')}
+                  {format(selectedDate.from, 'LLL dd, y')} -{' '}
+                  {format(selectedDate.to, 'LLL dd, y')}
                 </>
               ) : (
-                format(date.from, 'LLL dd, y')
+                format(selectedDate.from, 'LLL dd, y')
               )
             ) : (
               <span>Pick a date</span>
@@ -51,10 +64,10 @@ export function CalendarDateRangePicker({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={2}
+            defaultMonth={selectedDate?.from}
+            selected={selectedDate}
+            onSelect={handleDateChange}
+            numberOfMonths={1}
           />
         </PopoverContent>
       </Popover>

@@ -2,6 +2,7 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { CellAction } from './cell-action';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export type cashsales = {
   id: string;
@@ -12,25 +13,25 @@ export type cashsales = {
 };
 
 export const Cashsalescolumns: ColumnDef<cashsales>[] = [
-  // {
-  //   id: 'select',
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={table.getIsAllPageRowsSelected()}
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //     />
-  //   ),
-  //   enableSorting: true,
-  //   enableHiding: true
-  // },
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: true,
+    enableHiding: true
+  },
 
 
   {
@@ -49,16 +50,6 @@ export const Cashsalescolumns: ColumnDef<cashsales>[] = [
     accessorKey: 'cashsalescode',
     header: () => <div className="text-left">CashSales Code</div>
   },
-  // {
-  //   accessorKey: 'servamount',
-  //   header: () => <div className="text-left">Service Amount</div>,
-  //   cell: ({ row }) => {
-  //     return new Intl.NumberFormat('en-PH', {
-  //       style: 'currency',
-  //       currency: 'PHP'
-  //     }).format(row.getValue('servamount'));
-  //   }
-  // },
   {
     accessorKey: 'customer',
     header: () => <div className="text-left">Branch</div>

@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
 import {
   Table,
   TableBody,
@@ -30,9 +31,11 @@ import {
   useReactTable,
   getPaginationRowModel
 } from '@tanstack/react-table';
-import { CalendarDays, ChevronLeftIcon, ChevronRightIcon, Search } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, Search } from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
+import { DateRange } from 'react-day-picker';
+import { isWithinInterval, endOfDay, startOfDay } from 'date-fns';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -48,34 +51,38 @@ export function DataTable<TData, TValue>({
     []
   );
 
-  const [yearFilter, setYearFilter] = React.useState<number | null>(2025);
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    to: new Date()
+  });
   const [searchValue, setSearchValue] = React.useState<string>('');
   const filteredData = React.useMemo(() => {
     return data
       .filter((item) => {
-        if (yearFilter) {
+        if (dateRange?.from && dateRange?.to) {
           const cashsalesdate = new Date((item as any).cashsalesdate);
-          return cashsalesdate.getFullYear() === yearFilter;
+          return isWithinInterval(cashsalesdate, {
+            start: startOfDay(dateRange.from),
+            end: endOfDay(dateRange.to)
+          });
         }
         return true;
       })
       .filter((item) => {
-        const cashsalesdate = new Date((item as any).cashsalesdate);
-        const formattedDateString = cashsalesdate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-        return formattedDateString
+        return (item as any).cashsalescode
           .toLowerCase()
           .includes(searchValue.toLowerCase());
       })
       .sort((a, b) => {
-        const nameA = new Date((a as any).cashsalesdate).toLocaleDateString('en-US');
-        const nameB = new Date((b as any).cashsalesdate).toLocaleDateString('en-US');
+        const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
+          'en-US'
+        );
+        const nameB = new Date((b as any).cashsalesdate).toLocaleDateString(
+          'en-US'
+        );
         return nameA.localeCompare(nameB);
       });
-  }, [data, yearFilter, searchValue]);
+  }, [data, dateRange, searchValue]);
 
   const table = useReactTable({
     data: filteredData,
@@ -91,56 +98,22 @@ export function DataTable<TData, TValue>({
     }
   });
 
-
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-
-        {/* <BackgroundGradient className="w-full h-full rounded-md bg-white dark:bg-neutral-900">
-          <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-l font-thin">
-              Total Service Fee
-            </CardTitle>
-            <DollarSign size={24} color="#333333" strokeWidth={1.5} />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-PH', {
-                style: 'currency',
-                currency: 'PHP'
-              }).format(fee)}
-            </div>
-          </CardContent>
-   
-        </BackgroundGradient> */}
-
-        <div className="flex w-full items-end">
-          <Select
-            value={yearFilter ? yearFilter.toString() : 'All Years'}
-            onValueChange={(value) => {
-              setYearFilter(value === 'All Years' ? null : Number(value));
-            }}
-          >
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder="Filter Year" />
-            </SelectTrigger>
-            <SelectContent side="bottom">
-            <SelectItem value="All Years">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span>All Years</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-          </Select>
+      <div className="col-3 flex gap-4">
+        <div className="flex-1">
+          <CalendarDateRangePicker
+            className="w-full"
+            date={dateRange}
+            onDateChange={setDateRange}
+          />
         </div>
 
-        {/* Search Input in the last column */}
-        <div className="flex w-full items-end">
+        <div className="flex-1">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search Date..."
+              placeholder="Search CashSales Code..."
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
               className="h-10 w-full pl-9"
@@ -149,7 +122,7 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(80vh-220px)] rounded-md border md:h-[calc(85dvh-240px)]">
+      <ScrollArea className="h-[calc(80vh-220px)] rounded-md border md:h-[calc(85dvh-330px)]">
         <Table className="relative">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

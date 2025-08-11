@@ -2,7 +2,7 @@
 
 import { db } from '@/utils/db/drizzle';
 import { cashsalesTable } from '@/utils/db/schema';
-import { count, sql } from 'drizzle-orm';
+import { count, desc, sql, asc, eq } from 'drizzle-orm';
 
 export async function gettotaltrans() {
   try {
@@ -30,10 +30,102 @@ export async function gettotalbranch() {
 
 export async function getCashsalesData() {
   try {
-    const result = await db.select().from(cashsalesTable).limit(20);
+    const result = await db
+      .select()
+      .from(cashsalesTable)
+      .orderBy(
+        desc(cashsalesTable.cashsalesdate),
+        asc(cashsalesTable.cashsalescode)
+      );
     return result;
   } catch (error) {
     console.error('Error getting cashsales data:', error);
+    return [];
+  }
+}
+
+export async function getTransactionCountPerLocation() {
+  try {
+    const result = await db
+      .select({
+        location: cashsalesTable.stocklocation,
+        count: count()
+      })
+      .from(cashsalesTable)
+      .groupBy(cashsalesTable.stocklocation)
+      .orderBy(desc(count()));
+
+    return result;
+  } catch (error) {
+    console.error('Error getting transaction count per location:', error);
+    return [];
+  }
+}
+
+export async function getPercentageChangeTotalTransaction() {
+  try {
+    // Get yesterday's date
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+    // Get total transactions count
+    const totalResult = await db
+      .select({
+        totalCount: count()
+      })
+      .from(cashsalesTable);
+
+    const totalCount = totalResult[0]?.totalCount || 0;
+
+    // Get yesterday's transactions count
+    const yesterdayResult = await db
+      .select({
+        yesterdayCount: count()
+      })
+      .from(cashsalesTable)
+      .where(eq(cashsalesTable.cashsalesdate, yesterdayString));
+
+    const yesterdayCount = yesterdayResult[0]?.yesterdayCount || 0;
+
+    // Calculate percentage
+    const percentage = totalCount > 0 ? (yesterdayCount / totalCount) * 100 : 0;
+
+    return {
+      totalTransactions: totalCount,
+      yesterdayTransactions: yesterdayCount,
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      yesterdayDate: yesterdayString
+    };
+  } catch (error) {
+    console.error(
+      'Error getting transaction percentage from yesterday:',
+      error
+    );
+    return {
+      totalTransactions: 0,
+      yesterdayTransactions: 0,
+      percentage: 0,
+      yesterdayDate: ''
+    };
+  }
+}
+
+export async function getDailyTransactionPerLocation() {
+  try {
+    const result = await db
+      .select({
+        date: cashsalesTable.cashsalesdate,
+        location: cashsalesTable.stocklocation,
+        count: count()
+      })
+      .from(cashsalesTable)
+      .groupBy(cashsalesTable.cashsalesdate, cashsalesTable.stocklocation)
+      .orderBy(cashsalesTable.cashsalesdate, cashsalesTable.stocklocation);
+
+    return result;
+  } catch (error) {
+    console.error('Error getting daily transactions per location:', error);
     return [];
   }
 }
