@@ -100,8 +100,8 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="col-3 flex gap-4">
-        <div className="flex-1">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="w-full min-w-0">
           <CalendarDateRangePicker
             className="w-full"
             date={dateRange}
@@ -109,7 +109,7 @@ export function DataTable<TData, TValue>({
           />
         </div>
 
-        <div className="flex-1">
+        <div className="w-full min-w-0">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

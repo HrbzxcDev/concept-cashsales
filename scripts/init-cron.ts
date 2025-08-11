@@ -1,6 +1,7 @@
 import { cronService, CRON_SCHEDULES } from '../lib/cron-service';
 
 // Function to call the fetch-and-save API
+// Must run the application first 
 async function fetchAndSaveData() {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
