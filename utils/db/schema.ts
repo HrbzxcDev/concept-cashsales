@@ -5,7 +5,8 @@ import {
   timestamp,
   boolean,
   uuid,
-  numeric
+  numeric,
+  time
 } from 'drizzle-orm/pg-core';
 
 
@@ -25,10 +26,9 @@ export const apifetchedTable = pgTable('tblapifetched', {
   id: uuid('id').notNull().primaryKey().defaultRandom().unique(),
   description: varchar('description', { length: 150 }).notNull(),
   count: numeric('count').notNull(),
-  cashsalescode: varchar('cashsalescode', { length: 100 }).notNull(),
-  customer: varchar('customer', { length: 100 }).notNull(),
-  stocklocation: varchar('stocklocation', { length: 100 }).notNull(),
-  status: boolean('status').notNull().default(true),
+  datefetched: date('datefetched').notNull(),
+  timefetched: time('timefetched').notNull(),
+  status: boolean('status').notNull(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });

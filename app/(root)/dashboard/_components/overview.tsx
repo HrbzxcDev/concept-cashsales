@@ -5,7 +5,6 @@ import {
   TrendingUp,
   TrendingDown,
   ShoppingCart,
-  Activity,
   MapPinHouse,
   Percent,
   PackageCheck
@@ -15,6 +14,7 @@ import { Cashsalescolumns } from '@/app/(root)/cashsales-table/_components/cashs
 import { Separator } from '@/components/ui/separator';
 import { TransPerLocation } from './transperlocation';
 import { ChartLineMultiple } from './dailytransperbranch';
+import FetchActivity from './fetchactivity';
 
 interface OverviewProps {
   totalTransactions: number;
@@ -181,8 +181,9 @@ export default function Overview({
             </div>
           </div>
           <div className="lg:col-span-1">
-            <div className="h-[500px]">
+            <div className="flex flex-col gap-4">
               <TransPerLocation />
+    
             </div>
           </div>
         </div>
@@ -199,11 +200,11 @@ export default function Overview({
           <div className="lg:col-span-2">
             <DataTable columns={Cashsalescolumns} data={cashsalesData} />
           </div>
-          {/* <div className="lg:col-span-1">
+          <div className="lg:col-span-1">
             <div className="h-[480px] lg:mt-[55px]">
-              <TransPerLocation />
+               <FetchActivity />
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
     </PageContainer>

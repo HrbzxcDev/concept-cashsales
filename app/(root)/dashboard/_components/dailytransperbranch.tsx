@@ -136,7 +136,8 @@ export function ChartLineMultiple() {
 
   return (
     <Card className="p-1 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
-      <CardHeader className="flex flex-col space-y-2 border-b py-5">
+       <CardHeader className="flex flex-col space-y-0 border-b py-4">
+      {/* <CardHeader className="flex flex-col space-y-2 border-b py-4"> */}
         <CardTitle className="text-lg">
           Daily Transactions Per Location
         </CardTitle>

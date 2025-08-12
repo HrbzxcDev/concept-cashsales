@@ -67,7 +67,9 @@ export function TransPerLocation() {
 
   return (
     <Card className="h-full shadow-[5px_5px_5px_rgba(0,0,0,0.2)] ">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+      <CardHeader className="flex flex-col space-y-0 border-b py-4 sm:flex-row">
+      {/* <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row"> */}
+
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle className="text-lg">
             Transaction Count Per Location
@@ -80,7 +82,7 @@ export function TransPerLocation() {
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[300px] w-full"
+          className="aspect-auto h-[305px] w-full"
         >
           <BarChart
             data={locationData}

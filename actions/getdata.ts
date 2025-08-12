@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable } from '@/utils/db/schema';
+import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
 import { count, desc, sql, asc, eq } from 'drizzle-orm';
 
 export async function gettotaltrans() {
@@ -126,6 +126,34 @@ export async function getDailyTransactionPerLocation() {
     return result;
   } catch (error) {
     console.error('Error getting daily transactions per location:', error);
+    return [];
+  }
+}
+
+// Recent API fetch activities from tblapifetched
+export async function getRecentApiFetches(limit: number = 10) {
+  try {
+    const result = await db
+      .select({
+        id: apifetchedTable.id,
+        description: apifetchedTable.description,
+        count: apifetchedTable.count,
+        datefetched: apifetchedTable.datefetched,
+        timefetched: apifetchedTable.timefetched,
+        status: apifetchedTable.status,
+        createdAt: apifetchedTable.createdAt
+      })
+      .from(apifetchedTable)
+      .orderBy(desc(apifetchedTable.createdAt))
+      .limit(limit);
+
+    // Ensure numeric values are returned as numbers
+    return result.map((row) => ({
+      ...row,
+      count: Number(row.count as unknown as number)
+    }));
+  } catch (error) {
+    console.error('Error getting recent API fetches:', error);
     return [];
   }
 }
