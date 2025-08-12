@@ -52,7 +52,7 @@ export default function Overview({
   return (
     <PageContainer scrollable>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="h-full w-full rounded-md bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Transactions
@@ -82,7 +82,7 @@ export default function Overview({
           </CardContent>
         </Card>
 
-        <Card className="h-full w-full rounded-md bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Yesterday&apos;s Transactions
@@ -104,7 +104,7 @@ export default function Overview({
           </CardContent>
         </Card>
 
-        <Card className="h-full w-full rounded-md bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Transaction Rate
@@ -140,7 +140,7 @@ export default function Overview({
           </CardContent>
         </Card>
 
-        <Card className="h-full w-full rounded-md bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Deployed Branches
@@ -201,7 +201,7 @@ export default function Overview({
             <DataTable columns={Cashsalescolumns} data={cashsalesData} />
           </div>
           <div className="lg:col-span-1">
-            <div className="h-[480px] lg:mt-[55px]">
+            <div className="h-[478px] lg:mt-[55px]">
                <FetchActivity />
             </div>
           </div>

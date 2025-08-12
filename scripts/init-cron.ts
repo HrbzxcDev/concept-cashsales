@@ -2,10 +2,13 @@ import { cronService, CRON_SCHEDULES } from '../lib/cron-service';
 
 // Function to call the fetch-and-save API
 // Must run the application first 
+
+//2nd Step
 async function fetchAndSaveData() {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const response = await fetch(
+      //calling the function from /app/api/fetch-and-save
       `${baseUrl}/api/fetch-and-save?limit=100&upsert=true`,
       {
         method: 'GET',
@@ -20,16 +23,17 @@ async function fetchAndSaveData() {
     }
 
     const result = await response.json();
-    console.log('Fetch and save result:', result);
+    console.log('Fetch and Save Result:', result);
   } catch (error) {
     console.error('Error in fetch and save task:', error);
     throw error;
   }
 }
 
+//1st Step
 // Initialize cron jobs
 function initializeCronJobs() {
-  console.log('Initializing cron jobs...');
+  console.log('Initializing Cron Jobs...');
 
   // Schedule fetch-and-save job to run every minute
   cronService.scheduleJob({
@@ -46,19 +50,20 @@ function initializeCronJobs() {
   //   task: fetchAndSaveData
   // });
 
-  console.log('Cron jobs initialized successfully!');
-  console.log('Active jobs:', cronService.getActiveJobs());
+  console.log('Cron Jobs Initialized Successfully!');
+  console.log('Active Jobs:', cronService.getActiveJobs());
 }
 
+//function if the cron jobs is canncelled/shutdown
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log('Shutting down cron jobs...');
+  console.log('Shutting Down Cron Jobs...');
   cronService.stopAllJobs();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('Shutting down cron jobs...');
+  console.log('Shutting Down Cron Jobs...');
   cronService.stopAllJobs();
   process.exit(0);
 });

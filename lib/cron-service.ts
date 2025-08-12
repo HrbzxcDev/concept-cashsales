@@ -20,21 +20,22 @@ class CronService {
       this.jobs.get(name)?.stop();
     }
 
+    // Initialized once the schedule is running
     // Create new job
     const job = cron.schedule(
       schedule,
       async () => {
         try {
           console.log(
-            `[${new Date().toISOString()}] Starting cron job: ${name}`
+            `[${new Date().toISOString()}] Starting Cron Jobs: ${name}`
           );
           await task();
           console.log(
-            `[${new Date().toISOString()}] Completed cron job: ${name}`
+            `[${new Date().toISOString()}] Completed Cron Jobs: ${name}`
           );
         } catch (error) {
           console.error(
-            `[${new Date().toISOString()}] Error in cron job ${name}:`,
+            `[${new Date().toISOString()}] Error in Cron Jobs ${name}:`,
             error
           );
         }
@@ -46,7 +47,7 @@ class CronService {
 
     this.jobs.set(name, job);
     job.start();
-    console.log(`Scheduled cron job "${name}" with schedule: ${schedule}`);
+    console.log(`Scheduled Cron Jobs "${name}" With Schedule: ${schedule} (Every Minute)`);
   }
 
   /**
@@ -57,7 +58,7 @@ class CronService {
     if (job) {
       job.stop();
       this.jobs.delete(name);
-      console.log(`Stopped cron job: ${name}`);
+      console.log(`Stopped Cron Jobs: ${name}`);
     }
   }
 
@@ -67,7 +68,7 @@ class CronService {
   stopAllJobs(): void {
     this.jobs.forEach((job, name) => {
       job.stop();
-      console.log(`Stopped cron job: ${name}`);
+      console.log(`Stopped Cron Jobs: ${name}`);
     });
     this.jobs.clear();
   }
