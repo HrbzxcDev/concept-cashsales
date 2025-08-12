@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable } from '@/utils/db/schema';
+import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
 
 // Types
@@ -83,6 +83,49 @@ function transformAPIToDB(apiData: any) {
 }
 
 /**
+ * Save API fetch activity to the database
+ */
+async function saveAPIFetchActivity(
+  description: string,
+  count: number,
+  status: boolean
+) {
+  try {
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
+
+    // Create activity record
+    const activityRecord = await db
+      .insert(apifetchedTable)
+      .values({
+        description: description,
+        count: count.toString(),
+        datefetched: currentDate,
+        timefetched: currentTime,
+        status: status,
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+
+    console.log('API fetch activity saved:', {
+      id: activityRecord[0].id,
+      description: activityRecord[0].description,
+      count: activityRecord[0].count,
+      datefetched: activityRecord[0].datefetched,
+      timefetched: activityRecord[0].timefetched,
+      status: activityRecord[0].status
+    });
+
+    return activityRecord[0];
+  } catch (error) {
+    console.error('Error saving API fetch activity:', error);
+    throw error;
+  }
+}
+
+/**
  * Server-side GET function that fetches data from external API and saves to database
  */
 export async function GET(request: NextRequest) {
@@ -150,6 +193,17 @@ export async function GET(request: NextRequest) {
     );
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
+      // Save activity for empty response
+      try {
+        await saveAPIFetchActivity(
+          'API fetch operation - No data returned from external API',
+          0,
+          true
+        );
+      } catch (activityError) {
+        console.error('Failed to save API fetch activity for empty response:', activityError);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'No data to save from external API',
@@ -204,6 +258,17 @@ export async function GET(request: NextRequest) {
     );
 
     if (validRecords.length === 0) {
+      // Save activity for no valid records
+      try {
+        await saveAPIFetchActivity(
+          'API fetch operation - No valid records found after filtering',
+          0,
+          true
+        );
+      } catch (activityError) {
+        console.error('Failed to save API fetch activity for no valid records:', activityError);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'No valid records to save from external API',
@@ -310,6 +375,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Save API fetch activity to database
+    try {
+      const activityDescription = `API fetch operation - ${upsert ? 'Upsert' : 'Insert only'} mode. Limit: ${limit}${dateFrom ? `, Date from: ${dateFrom}` : ''}${dateTo ? `, Date to: ${dateTo}` : ''}`;
+      
+      await saveAPIFetchActivity(
+        activityDescription,
+        validRecords.length,
+        errors.length === 0
+      );
+      
+      console.log('API fetch activity saved successfully');
+    } catch (activityError) {
+      console.error('Failed to save API fetch activity:', activityError);
+      // Don't fail the main operation if activity logging fails
+    }
+
     const responseData: FetchAndSaveResponse = {
       success: errors.length === 0,
       message: `Successfully processed ${validRecords.length} valid records (${
@@ -331,6 +412,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     console.error('API Error:', error);
+    
+    // Save activity for failed operation
+    try {
+      await saveAPIFetchActivity(
+        `API fetch operation failed - ${error instanceof Error ? error.message : 'Unknown error'}`,
+        0,
+        false
+      );
+    } catch (activityError) {
+      console.error('Failed to save API fetch activity for error:', activityError);
+    }
+    
     return NextResponse.json(
       {
         success: false,
