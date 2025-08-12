@@ -1,5 +1,6 @@
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp,
@@ -15,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { TransPerLocation } from './transperlocation';
 import { ChartLineMultiple } from './dailytransperbranch';
 import FetchActivity from './fetchactivity';
+import { Sparkline } from '@/components/ui/sparkline';
 
 interface OverviewProps {
   totalTransactions: number;
@@ -49,15 +51,60 @@ export default function Overview({
     });
   };
 
+  // Build compact sparkline data (daily counts for the last `days` days)
+  function getDailyCountsData(rows: any[], days = 12) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toKey = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const counts = new Map<string, number>();
+    for (const row of rows || []) {
+      if (!row?.cashsalesdate) continue;
+      const d = new Date(row.cashsalesdate);
+      const key = toKey(d);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+
+    const result: { date: string; value: number }[] = [];
+    const today = new Date();
+    // Start from oldest day to newest
+    for (let i = days - 1; i >= 0; i -= 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = toKey(d);
+      result.push({ date: key, value: counts.get(key) || 0 });
+    }
+    return result;
+  }
+
+  // Build a day-over-day percentage change series from daily counts
+  function getPercentageSeries(rows: any[], days = 12) {
+    const daily = getDailyCountsData(rows, days + 1); // need previous day to compute first change
+    const series = [] as { date: string; value: number }[];
+    for (let i = 1; i < daily.length; i += 1) {
+      const prev = daily[i - 1].value;
+      const curr = daily[i].value;
+      const pct = prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+      series.push({ date: daily[i].date, value: Number(pct.toFixed(2)) });
+    }
+    return series;
+  }
+
+  // Flat line series for metrics that don't have historical data
+  function getFlatSeries(value: number, days = 12) {
+    const base = getDailyCountsData([], days);
+    return base.map((d) => ({ ...d, value }));
+  }
+
   return (
     <PageContainer scrollable>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="relative h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Transactions
             </CardTitle>
-            <ShoppingCart size={32} color="#333333" strokeWidth={1.5} />
+            <ShoppingCart size={28} color="#333333" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalTransactions}</div>
@@ -80,14 +127,21 @@ export default function Overview({
               From Yesterday
             </div>
           </CardContent>
+          <div className="absolute bottom-8 right-8">
+            <Sparkline
+              data={getDailyCountsData(cashsalesData, 12)}
+              className="h-12 w-28"
+              color="#7c6cf2"
+            />
+          </div>
         </Card>
 
-        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="relative h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Yesterday&apos;s Transactions
             </CardTitle>
-            <PackageCheck size={32} color="#333333" strokeWidth={1.5} />
+            <PackageCheck size={28} color="#333333" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -102,14 +156,21 @@ export default function Overview({
               </Badge>
             </div>
           </CardContent>
+          <div className="absolute bottom-8 right-8">
+            <Sparkline
+              data={getDailyCountsData(cashsalesData, 12)}
+              className="h-12 w-28"
+              color="#ef4444"
+            />
+          </div>
         </Card>
 
-        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="relative h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Transaction Rate
             </CardTitle>
-            <Percent size={32} color="#333333" strokeWidth={1.5} />
+            <Percent size={28} color="#333333" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -138,14 +199,21 @@ export default function Overview({
               {percentageChangeData.totalTransactions} total
             </div> */}
           </CardContent>
+          <div className="absolute bottom-8 right-8">
+            <Sparkline
+              data={getPercentageSeries(cashsalesData, 12)}
+              className="h-12 w-28"
+              color="#10b981"
+            />
+          </div>
         </Card>
 
-        <Card className="h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
+        <Card className="relative h-full w-full rounded-xl bg-white shadow-[5px_5px_5px_rgba(0,0,0,0.2)] dark:bg-neutral-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-md font-thin text-muted-foreground">
               Deployed Branches
             </CardTitle>
-            <MapPinHouse size={32} color="#333333" strokeWidth={1.5} />
+            <MapPinHouse size={28} color="#333333" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalBranch}</div>
@@ -168,6 +236,13 @@ export default function Overview({
               From Last Month
             </div>
           </CardContent>
+          <div className="absolute bottom-1 right-8">
+            <Sparkline
+              data={getFlatSeries(totalBranch, 12)}
+              className="h-12 w-28"
+              color="#94a3b8"
+            />
+          </div>
         </Card>
       </div>
 
@@ -183,7 +258,6 @@ export default function Overview({
           <div className="lg:col-span-1">
             <div className="flex flex-col gap-4">
               <TransPerLocation />
-    
             </div>
           </div>
         </div>
@@ -202,11 +276,12 @@ export default function Overview({
           </div>
           <div className="lg:col-span-1">
             <div className="h-[478px] lg:mt-[55px]">
-               <FetchActivity />
+              <FetchActivity />
             </div>
           </div>
         </div>
       </div>
+      <SiteFooter />
     </PageContainer>
   );
 }

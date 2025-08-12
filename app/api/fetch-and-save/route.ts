@@ -64,21 +64,41 @@ function transformAPIToDB(apiData: any) {
       }
       return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
     } catch (error) {
-      throw new Error(`Error parsing date: ${dateStr} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error parsing date: ${dateStr} - ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
   }
 
   return {
     cashsalesid: cashsalesid,
     cashsalesdate: formatDate(
-      apiData.cashsalesdate || apiData.cashsales_date || apiData.cashSalesDate || apiData.date
+      apiData.cashsalesdate ||
+        apiData.cashsales_date ||
+        apiData.cashSalesDate ||
+        apiData.date
     ),
     cashsalescode:
-      apiData.cashsalescode || apiData.cashsales_code || apiData.cashSalesCode || apiData.code || '',
-    customer: apiData.customer || apiData.customer_name || apiData.customerName || apiData.cust || '',
+      apiData.cashsalescode ||
+      apiData.cashsales_code ||
+      apiData.cashSalesCode ||
+      apiData.code ||
+      '',
+    customer:
+      apiData.customer ||
+      apiData.customer_name ||
+      apiData.customerName ||
+      apiData.cust ||
+      '',
     stocklocation:
-      apiData.stocklocation || apiData.stock_location || apiData.stockLocation || apiData.location || '',
-    status: apiData.status || apiData.is_active || false
+      apiData.stocklocation ||
+      apiData.stock_location ||
+      apiData.stockLocation ||
+      apiData.location ||
+      '',
+    status: apiData.status || apiData.is_active || true
   };
 }
 
@@ -133,7 +153,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     // Get query parameters
-    const limit = parseInt(searchParams.get('limit') || '1000');
+    const limit = parseInt(searchParams.get('limit') || '100');
     const upsert = searchParams.get('upsert') === 'true';
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -141,7 +161,7 @@ export async function GET(request: NextRequest) {
     // External API configuration
     const API_BASE_URL =
       process.env.NEXT_PUBLIC_API_BASE_URL ||
-      'https://dev-api.qne.cloud/api/CashSales';
+      'https://api.qne.cloud/api/CashSales';
     const DB_CODE = process.env.NEXT_PUBLIC_DB_CODE || '';
 
     console.log('Starting fetch and save operation...');
@@ -149,24 +169,19 @@ export async function GET(request: NextRequest) {
     console.log('Limit:', limit);
     console.log('Upsert:', upsert);
 
-    // Build query parameters for external API
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+
+    // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
-    if (limit > 0) {
-      queryParams.append('limit', limit.toString());
-    }
 
-    if (dateFrom) {
-      queryParams.append('dateFrom', dateFrom);
-    }
-
-    if (dateTo) {
-      queryParams.append('dateTo', dateTo);
-    }
+    // Add OData parameters
+    queryParams.append('$skip', '0');
+    queryParams.append('$top', limit > 0 ? limit.toString() : '100');
+    queryParams.append('$filter', `cashsalesdate ge ${today}`);
 
     // Construct the full URL
-    const url = queryParams.toString()
-      ? `${API_BASE_URL}?${queryParams.toString()}`
-      : API_BASE_URL;
+    const url = `${API_BASE_URL}?${queryParams.toString()}`;
 
     console.log('Fetching data from:', url);
 
@@ -196,12 +211,15 @@ export async function GET(request: NextRequest) {
       // Save activity for empty response
       try {
         await saveAPIFetchActivity(
-          'API fetch operation - No data returned from external API',
+          'API Fetch Operation - No data returned from external API',
           0,
           true
         );
       } catch (activityError) {
-        console.error('Failed to save API fetch activity for empty response:', activityError);
+        console.error(
+          'Failed to save API fetch activity for empty response:',
+          activityError
+        );
       }
 
       return NextResponse.json({
@@ -261,12 +279,15 @@ export async function GET(request: NextRequest) {
       // Save activity for no valid records
       try {
         await saveAPIFetchActivity(
-          'API fetch operation - No valid records found after filtering',
+          'API Fetch Operation - No valid records found after filtering',
           0,
           true
         );
       } catch (activityError) {
-        console.error('Failed to save API fetch activity for no valid records:', activityError);
+        console.error(
+          'Failed to save API fetch activity for no valid records:',
+          activityError
+        );
       }
 
       return NextResponse.json({
@@ -289,7 +310,7 @@ export async function GET(request: NextRequest) {
         // Log the raw item for debugging
         console.log('Processing item:', JSON.stringify(item, null, 2));
 
-            // Log the raw item before transformation for debugging
+        // Log the raw item before transformation for debugging
         console.log('=== DEBUGGING EMPTY FIELDS ===');
         console.log('Raw API item:', JSON.stringify(item, null, 2));
         console.log('Available fields in item:', Object.keys(item || {}));
@@ -311,7 +332,7 @@ export async function GET(request: NextRequest) {
             .select()
             .from(cashsalesTable)
             .where(eq(cashsalesTable.cashsalesid, transformedData.cashsalesid))
-            .limit(1);
+            .limit(100);
 
           if (existingRecord.length > 0) {
             // Update existing record
@@ -377,14 +398,16 @@ export async function GET(request: NextRequest) {
 
     // Save API fetch activity to database
     try {
-      const activityDescription = `API fetch operation - ${upsert ? 'Upsert' : 'Insert only'} mode. Limit: ${limit}${dateFrom ? `, Date from: ${dateFrom}` : ''}${dateTo ? `, Date to: ${dateTo}` : ''}`;
-      
+      const activityDescription = `API Fetch Operation - ${
+        upsert ? 'Upsert' : 'Insert only'
+      } Mode.`;
+
       await saveAPIFetchActivity(
         activityDescription,
         validRecords.length,
         errors.length === 0
       );
-      
+
       console.log('API fetch activity saved successfully');
     } catch (activityError) {
       console.error('Failed to save API fetch activity:', activityError);
@@ -412,18 +435,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     console.error('API Error:', error);
-    
+
     // Save activity for failed operation
     try {
       await saveAPIFetchActivity(
-        `API fetch operation failed - ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `API Fetch Operation Failed - ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         0,
         false
       );
     } catch (activityError) {
-      console.error('Failed to save API fetch activity for error:', activityError);
+      console.error(
+        'Failed to save API fetch activity for error:',
+        activityError
+      );
     }
-    
+
     return NextResponse.json(
       {
         success: false,

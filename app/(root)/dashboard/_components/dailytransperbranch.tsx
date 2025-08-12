@@ -108,7 +108,7 @@ export function ChartLineMultiple() {
           <CardDescription>Loading Transaction Data...</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center">
+          <div className="flex h-[249px] items-center justify-center">
             <div className="text-muted-foreground">Fetching Data.....</div>
           </div>
         </CardContent>
@@ -126,7 +126,7 @@ export function ChartLineMultiple() {
           <CardDescription>No Transaction Data Available</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] justify-center marker:items-center">
+          <div className="flex h-[249px] justify-center marker:items-center">
             <div className="text-muted-foreground">No Data To Display</div>
           </div>
         </CardContent>
@@ -136,8 +136,8 @@ export function ChartLineMultiple() {
 
   return (
     <Card className="p-1 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
-       <CardHeader className="flex flex-col space-y-0 border-b py-4">
-      {/* <CardHeader className="flex flex-col space-y-2 border-b py-4"> */}
+      <CardHeader className="flex flex-col space-y-0 border-b py-4">
+        {/* <CardHeader className="flex flex-col space-y-2 border-b py-4"> */}
         <CardTitle className="text-lg">
           Daily Transactions Per Location
         </CardTitle>
@@ -149,7 +149,7 @@ export function ChartLineMultiple() {
       <CardContent>
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[300px] w-full pt-10"
+          className="aspect-auto h-[200px] w-full pt-7"
         >
           <LineChart
             accessibilityLayer

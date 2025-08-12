@@ -66,7 +66,7 @@ export async function getPercentageChangeTotalTransaction() {
   try {
     // Get yesterday's date
     const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setDate(yesterday.getDate()); // remove -1
     const yesterdayString = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
     // Get total transactions count
@@ -133,7 +133,7 @@ export async function getDailyTransactionPerLocation() {
 // Recent API fetch activities from tblapifetched
 export async function getRecentApiFetches(limit: number = 10) {
   try {
-    const result = await db
+    const baseQuery = db
       .select({
         id: apifetchedTable.id,
         description: apifetchedTable.description,
@@ -144,8 +144,13 @@ export async function getRecentApiFetches(limit: number = 10) {
         createdAt: apifetchedTable.createdAt
       })
       .from(apifetchedTable)
-      .orderBy(desc(apifetchedTable.createdAt))
-      .limit(limit);
+      .orderBy(desc(apifetchedTable.createdAt));
+
+    // If limit is -1 or 0, return all data without limit
+    const result =
+      limit === -1 || limit === 0
+        ? await baseQuery
+        : await baseQuery.limit(limit);
 
     // Ensure numeric values are returned as numbers
     return result.map((row) => ({

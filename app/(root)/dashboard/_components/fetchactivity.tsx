@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getRecentApiFetches } from '@/actions/getdata';
-import { CheckCircle2, XCircle, GitBranch, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, GitPullRequestCreateArrow, Clock } from 'lucide-react';
 
 type ActivityItem = {
   id: string;
@@ -46,8 +46,7 @@ export default function FetchActivity() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { getRecentApiFetches } = await import('@/actions/getdata');
-      const rows = await getRecentApiFetches(8);
+      const rows = await getRecentApiFetches();
       setActivities(rows as ActivityItem[]);
       setLoading(false);
     };
@@ -73,42 +72,44 @@ export default function FetchActivity() {
             return (
               <li key={item.id} className="flex items-start gap-4">
                 <div className="mt-1">
-                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  <GitPullRequestCreateArrow className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{item.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {formatDate(item.datefetched)} •{' '}
-                        {formatTime(item.timefetched)}
-                      </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.description}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Fetched Data Count:{' '}
+                        <span className="font-semibold">{item.count}</span>
+                      </p>
                     </div>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Fetched Data Count:{' '}
-                    <span className="font-semibold">{item.count}</span>
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={
-                        item.status
-                          ? 'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981]'
-                          : 'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444]'
-                      }
-                    >
-                      {item.status ? (
-                        <span className="inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Success
+                    <div className="mt-1 flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          {formatDate(item.datefetched)} •{' '}
+                          {formatTime(item.timefetched)}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1">
-                          <XCircle className="h-3.5 w-3.5" /> Failed
-                        </span>
-                      )}
-                    </Badge>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          item.status
+                            ? 'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981]'
+                            : 'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444]'
+                        }
+                      >
+                        {item.status ? (
+                          <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Success
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <XCircle className="h-3.5 w-3.5" /> Failed
+                          </span>
+                        )}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </li>

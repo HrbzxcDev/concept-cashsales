@@ -36,6 +36,13 @@ import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, endOfDay, startOfDay } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -50,6 +57,8 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [selectedRow, setSelectedRow] = React.useState<any>(null);
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -98,6 +107,51 @@ export function DataTable<TData, TValue>({
     }
   });
 
+  function renderSelectedRowDetails(row: any) {
+    if (!row) return null;
+    const hasCashsalesShape =
+      'cashsalesdate' in row ||
+      'cashsalescode' in row ||
+      'customer' in row ||
+      'stocklocation' in row;
+
+    if (hasCashsalesShape) {
+      const dateStr = row.cashsalesdate
+        ? new Date(row.cashsalesdate).toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        : '';
+      return (
+        <div className="grid gap-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">CashSales Date</span>
+            <span className="font-medium">{dateStr}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">CashSales Code</span>
+            <span className="font-medium">{row.cashsalescode || '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Branch</span>
+            <span className="font-medium">{row.customer || '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Stock Location</span>
+            <span className="font-medium">{row.stocklocation || '-'}</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <pre className="max-h-[50vh] overflow-auto rounded bg-muted p-3 text-xs">
+        {JSON.stringify(row, null, 2)}
+      </pre>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -128,7 +182,10 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="bg-neutral-800">
+                  <TableHead
+                    key={header.id}
+                    className="text-md bg-muted font-semibold text-muted-foreground"
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -146,6 +203,11 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => {
+                    setSelectedRow(row.original as any);
+                    setDialogOpen(true);
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -233,6 +295,18 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cash Sales Details</DialogTitle>
+            <DialogDescription>
+              Information for the selected row.
+            </DialogDescription>
+          </DialogHeader>
+          {renderSelectedRowDetails(selectedRow)}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
