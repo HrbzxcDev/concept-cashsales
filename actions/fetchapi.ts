@@ -31,6 +31,82 @@ export interface CashSaleDB {
   updatedAt: Date;
 }
 
+// Detailed API response for a single Cash Sales record (via Find?code=)
+export interface CashSaleDetailLine {
+  id: string;
+  numbering: string;
+  stock: string;
+  description: string;
+  qty: number;
+  uom: string;
+  unitPrice: number;
+  discount: string | number | null;
+  amount: number;
+  taxCode: string | null;
+  taxAmount: number | null;
+  netAmount: number | null;
+  glAccount?: string | null;
+  stockLocation?: string | null;
+  costCentre?: string | null;
+  project?: string | null;
+  serialNumber?: string | null;
+  cashSales?: string | null;
+}
+
+export interface CashSaleDetailResponse {
+  id: string;
+  cashSalesDate: string;
+  cashSalesCode: string;
+  customer: string;
+  customerName?: string | null;
+  term?: string | null;
+  stockLocation?: string | null;
+  currency?: string | null;
+  attention?: string | null;
+  salesPerson?: string | null;
+  depositTo?: string | null;
+  referenceNo?: string | null;
+  currencyRate?: number | null;
+  isChequeNo?: string | boolean | null;
+  isPostToAR?: boolean | null;
+  isTaxInclusive?: boolean | null;
+  isRounding?: boolean | null;
+  useMultiPayment?: boolean | null;
+  project?: string | null;
+  costCentre?: string | null;
+  multiPayments?: unknown[];
+  details?: CashSaleDetailLine[];
+}
+
+/**
+ * Fetch one cash sale with full details by cash sales code using the Find endpoint.
+ */
+export async function fetchCashSaleDetailByCode(
+  code: string
+): Promise<CashSaleDetailResponse> {
+  const baseFindUrl =
+    process.env.NEXT_PUBLIC_API_FIND_URL ||
+    'https://dev-api.qne.cloud/api/CashSales/Find';
+
+  const url = `${baseFindUrl}?code=${encodeURIComponent(code)}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      dbcode: process.env.NEXT_PUBLIC_DB_CODE || ''
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+  }
+
+  const detail: CashSaleDetailResponse = await response.json();
+  return detail;
+}
+
 export interface FetchAndSaveResponse {
   success: boolean;
   message: string;
@@ -56,7 +132,7 @@ function transformAPIToDB(
 ): Omit<CashSaleDB, 'id' | 'createdAt' | 'updatedAt'> {
   // Note: cashsalescode and stocklocation are now optional
   // They can be null if not provided by the API
-  
+
   return {
     cashsalesid: apiData.cashsalesid,
     cashsalesdate: apiData.cashsalesdate,

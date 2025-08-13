@@ -43,6 +43,11 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import type {
+  CashSaleDetailResponse,
+  CashSaleDetailLine
+} from '@/actions/cashsales-client';
+import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -59,6 +64,11 @@ export function DataTable<TData, TValue>({
   );
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedRow, setSelectedRow] = React.useState<any>(null);
+  const [detail, setDetail] = React.useState<CashSaleDetailResponse | null>(
+    null
+  );
+  const [detailLoading, setDetailLoading] = React.useState(false);
+  const [detailError, setDetailError] = React.useState<string | null>(null);
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -149,6 +159,149 @@ export function DataTable<TData, TValue>({
       <pre className="max-h-[50vh] overflow-auto rounded bg-muted p-3 text-xs">
         {JSON.stringify(row, null, 2)}
       </pre>
+    );
+  }
+
+  // Fetch detail when dialog opens for a specific row
+  React.useEffect(() => {
+    const run = async () => {
+      if (!dialogOpen || !selectedRow) return;
+      const code =
+        (selectedRow as any)?.cashsalescode ||
+        (selectedRow as any)?.cashSalesCode;
+      if (!code) return;
+      try {
+        setDetailLoading(true);
+        setDetailError(null);
+        const res = await fetchCashSaleDetailByCode(code);
+        setDetail(res);
+      } catch (err) {
+        setDetailError(
+          err instanceof Error ? err.message : 'Failed to load details'
+        );
+        setDetail(null);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+    run();
+  }, [dialogOpen, selectedRow]);
+
+  function SummaryTable({ data }: { data: CashSaleDetailResponse }) {
+    const rows: Array<[string, React.ReactNode]> = [
+      ['ID', data.id],
+      [
+        'Cash Sales Date',
+        new Date(data.cashSalesDate).toLocaleDateString('en-PH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      ],
+      ['Cash Sales Code', data.cashSalesCode],
+      ['Customer', data.customer],
+      ['Customer Name', data.customerName ?? '-'],
+      // ['Term', data.term ?? '-'],
+      ['Stock Location', data.stockLocation ?? '-'],
+      // ['Currency', data.currency ?? '-'],
+      ['Sales Person', data.salesPerson ?? '-'],
+      ['Deposit To', data.depositTo ?? '-'],
+      ['Reference No', data.referenceNo ?? '-'],
+      ['useMultiPayment', String(Boolean(data.useMultiPayment))],
+      ['Project', data.project ?? '-']
+
+      // ['Currency Rate', data.currencyRate ?? '-'],
+      // ['Post To AR', String(Boolean(data.isPostToAR))]
+    ] as any;
+
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableBody>
+            {rows.map(([label, value]: [string, React.ReactNode]) => (
+              <TableRow key={label}>
+                <TableCell className="w-48 text-xs text-muted-foreground">
+                  {label}
+                </TableCell>
+                <TableCell className="text-xs font-medium">{value}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
+  function DetailsTable({ lines = [] as CashSaleDetailLine[] }) {
+    if (!lines || lines.length === 0) {
+      return (
+        <div className="text-xs text-muted-foreground">No line items.</div>
+      );
+    }
+    const formatMoney = (n: any) =>
+      typeof n === 'number'
+        ? n.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })
+        : n ?? '-';
+    const sorted = [...lines].sort((a, b) => {
+      const na = Number(a.numbering ?? 0);
+      const nb = Number(b.numbering ?? 0);
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb; // ascending by line #
+      return String(a.description || '').localeCompare(
+        String(b.description || '')
+      );
+    });
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs font-semibold">#</TableHead>
+              <TableHead className="text-xs font-semibold">Stock #</TableHead>
+              <TableHead className="text-xs font-semibold">
+                Description
+              </TableHead>
+              <TableHead className="text-right text-xs font-semibold">Qty</TableHead>
+              <TableHead className="text-xs font-semibold">UOM</TableHead>
+              <TableHead className="text-right text-xs font-semibold">Unit Price</TableHead>
+              <TableHead className="text-right text-xs font-semibold">Discount</TableHead>
+              <TableHead className="text-right text-xs font-semibold">Amount</TableHead>
+              <TableHead className="text-xs font-semibold">Tax Code</TableHead>
+              <TableHead className="text-right text-xs font-semibold">Tax Amt</TableHead>
+              <TableHead className="text-right text-xs font-semibold">Net Amt</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((l) => (
+              <TableRow key={l.id}>
+                <TableCell className="text-xs">{l.numbering}</TableCell>
+                <TableCell className="text-xs">{l.stock}</TableCell>
+                <TableCell className="text-xs">{l.description}</TableCell>
+                <TableCell className="text-right text-xs">{l.qty}</TableCell>
+                <TableCell className="text-xs">{l.uom}</TableCell>
+                <TableCell className="text-right text-xs">
+                  {formatMoney(l.unitPrice)}
+                </TableCell>
+                <TableCell className="text-right text-xs">
+                  {formatMoney(l.discount)}
+                </TableCell>
+                <TableCell className="text-right text-xs">
+                  {formatMoney(l.amount)}
+                </TableCell>
+                <TableCell className="text-xs">{l.taxCode ?? '-'}</TableCell>
+                <TableCell className="text-right text-xs">
+                  {formatMoney(l.taxAmount)}
+                </TableCell>
+                <TableCell className="text-right text-xs">
+                  {formatMoney(l.netAmount)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     );
   }
 
@@ -297,14 +450,35 @@ export function DataTable<TData, TValue>({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] max-w-6xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cash Sales Details</DialogTitle>
             <DialogDescription>
               Information for the selected row.
             </DialogDescription>
           </DialogHeader>
-          {renderSelectedRowDetails(selectedRow)}
+          {detailLoading && (
+            <div className="text-md py-6 text-center text-muted-foreground">
+              Loading details…
+            </div>
+          )}
+          {detailError && (
+            <div className="py-6 text-sm text-red-600">{detailError}</div>
+          )}
+          {!detailLoading && !detailError && detail && (
+            <div className="space-y-4">
+              <SummaryTable data={detail} />
+              <div>
+                <div className="mb-2 text-sm font-semibold">Items</div>
+                <div className="overflow-x-auto">
+                  <ScrollArea className="h-[45vh]">
+                    <DetailsTable lines={detail.details || []} />
+                    <ScrollBar orientation="vertical" />
+                  </ScrollArea>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
