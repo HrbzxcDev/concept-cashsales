@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getRecentApiFetches } from '@/actions/getdata';
-import { CheckCircle2, XCircle, GitPullRequestCreateArrow, Clock } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  GitPullRequestCreateArrow,
+  Clock
+} from 'lucide-react';
 
 type ActivityItem = {
   id: string;
@@ -77,7 +82,7 @@ export default function FetchActivity() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-medium">{item.description}</p>
+                      <p className="text-sm">{item.description}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Fetched Data Count:{' '}
                         <span className="font-semibold">{item.count}</span>

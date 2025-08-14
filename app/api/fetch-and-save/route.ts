@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
       // Save activity for empty response
       try {
         await saveAPIFetchActivity(
-          'API Fetch Operation - No data returned from external API',
+          'API Fetch Operation - No data Returned From External API',
           0,
           true
         );
@@ -224,7 +224,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'No data to save from external API',
+        message: 'No Data To Save From External API',
         savedCount: 0,
         updatedCount: 0,
         data: []
@@ -279,7 +279,7 @@ export async function GET(request: NextRequest) {
       // Save activity for no valid records
       try {
         await saveAPIFetchActivity(
-          'API Fetch Operation - No valid records found after filtering',
+          'API Fetch Operation - No Valid Fecords Found After Filtering',
           0,
           true
         );
@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'No valid records to save from external API',
+        message: 'No Valid Fecords To Save From External API',
         savedCount: 0,
         updatedCount: 0,
         data: []

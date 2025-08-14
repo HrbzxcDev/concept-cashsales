@@ -275,7 +275,7 @@ export default function Overview({
             <DataTable columns={Cashsalescolumns} data={cashsalesData} />
           </div>
           <div className="lg:col-span-1">
-            <div className="h-[478px] lg:mt-[55px]">
+            <div className="h-[480px] lg:mt-[55px]">
               <FetchActivity />
             </div>
           </div>

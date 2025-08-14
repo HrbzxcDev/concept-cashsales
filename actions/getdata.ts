@@ -66,7 +66,7 @@ export async function getPercentageChangeTotalTransaction() {
   try {
     // Get yesterday's date
     const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate()); // remove -1
+    yesterday.setDate(yesterday.getDate() -1); // remove -1
     const yesterdayString = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
     // Get total transactions count

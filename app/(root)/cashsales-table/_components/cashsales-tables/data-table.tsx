@@ -31,7 +31,16 @@ import {
   useReactTable,
   getPaginationRowModel
 } from '@tanstack/react-table';
-import { ChevronLeftIcon, ChevronRightIcon, Search } from 'lucide-react';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Search,
+  X,
+  Filter,
+  Check,
+  MapPinHouse,
+  Hash
+} from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { DateRange } from 'react-day-picker';
@@ -75,6 +84,29 @@ export function DataTable<TData, TValue>({
     to: new Date()
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
+  const [filterType, setFilterType] = React.useState<
+    'all' | 'cashsalescode' | 'stocklocation'
+  >('all');
+  const [filterDropdownOpen, setFilterDropdownOpen] = React.useState(false);
+  const filterDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setFilterDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const filteredData = React.useMemo(() => {
     return data
       .filter((item) => {
@@ -88,9 +120,25 @@ export function DataTable<TData, TValue>({
         return true;
       })
       .filter((item) => {
-        return (item as any).cashsalescode
-          .toLowerCase()
-          .includes(searchValue.toLowerCase());
+        if (!searchValue) return true;
+
+        const searchLower = searchValue.toLowerCase();
+
+        if (filterType === 'cashsalescode') {
+          return (item as any).cashsalescode
+            .toLowerCase()
+            .includes(searchLower);
+        } else if (filterType === 'stocklocation') {
+          return (item as any).stocklocation
+            .toLowerCase()
+            .includes(searchLower);
+        } else {
+          // Search in both fields when filter type is 'all'
+          return (
+            (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
+            (item as any).stocklocation.toLowerCase().includes(searchLower)
+          );
+        }
       })
       .sort((a, b) => {
         const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
@@ -116,51 +164,6 @@ export function DataTable<TData, TValue>({
       columnFilters
     }
   });
-
-  function renderSelectedRowDetails(row: any) {
-    if (!row) return null;
-    const hasCashsalesShape =
-      'cashsalesdate' in row ||
-      'cashsalescode' in row ||
-      'customer' in row ||
-      'stocklocation' in row;
-
-    if (hasCashsalesShape) {
-      const dateStr = row.cashsalesdate
-        ? new Date(row.cashsalesdate).toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })
-        : '';
-      return (
-        <div className="grid gap-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">CashSales Date</span>
-            <span className="font-medium">{dateStr}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">CashSales Code</span>
-            <span className="font-medium">{row.cashsalescode || '-'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Branch</span>
-            <span className="font-medium">{row.customer || '-'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Stock Location</span>
-            <span className="font-medium">{row.stocklocation || '-'}</span>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <pre className="max-h-[50vh] overflow-auto rounded bg-muted p-3 text-xs">
-        {JSON.stringify(row, null, 2)}
-      </pre>
-    );
-  }
 
   // Fetch detail when dialog opens for a specific row
   React.useEffect(() => {
@@ -189,7 +192,7 @@ export function DataTable<TData, TValue>({
 
   function SummaryTable({ data }: { data: CashSaleDetailResponse }) {
     const rows: Array<[string, React.ReactNode]> = [
-      ['ID', data.id],
+      ['Cash Sales ID', data.id],
       [
         'Cash Sales Date',
         new Date(data.cashSalesDate).toLocaleDateString('en-PH', {
@@ -201,33 +204,35 @@ export function DataTable<TData, TValue>({
       ['Cash Sales Code', data.cashSalesCode],
       ['Customer', data.customer],
       ['Customer Name', data.customerName ?? '-'],
-      // ['Term', data.term ?? '-'],
       ['Stock Location', data.stockLocation ?? '-'],
-      // ['Currency', data.currency ?? '-'],
       ['Sales Person', data.salesPerson ?? '-'],
       ['Deposit To', data.depositTo ?? '-'],
       ['Reference No', data.referenceNo ?? '-'],
-      ['useMultiPayment', String(Boolean(data.useMultiPayment))],
+      ['MultiPayment', String(Boolean(data.useMultiPayment)).toUpperCase()],
       ['Project', data.project ?? '-']
-
-      // ['Currency Rate', data.currencyRate ?? '-'],
-      // ['Post To AR', String(Boolean(data.isPostToAR))]
     ] as any;
 
     return (
-      <div className="rounded-md border">
-        <Table>
-          <TableBody>
-            {rows.map(([label, value]: [string, React.ReactNode]) => (
-              <TableRow key={label}>
-                <TableCell className="w-48 text-xs text-muted-foreground">
-                  {label}
-                </TableCell>
-                <TableCell className="text-xs font-medium">{value}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="rounded-md border bg-card">
+        <div className="p-4">
+          <div className="mb-4 text-lg font-semibold">Transaction Summary</div>
+        </div>
+        <div className="px-4 pb-4">
+          <Table>
+            <TableBody>
+              {rows.map(([label, value]: [string, React.ReactNode]) => (
+                <TableRow key={label}>
+                  <TableCell className="w-48 py-2 text-sm text-muted-foreground">
+                    {label}
+                  </TableCell>
+                  <TableCell className="py-2 text-sm font-medium">
+                    {value}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     );
   }
@@ -235,7 +240,7 @@ export function DataTable<TData, TValue>({
   function DetailsTable({ lines = [] as CashSaleDetailLine[] }) {
     if (!lines || lines.length === 0) {
       return (
-        <div className="text-xs text-muted-foreground">No line items.</div>
+        <div className="text-sm text-muted-foreground">No line items.</div>
       );
     }
     const formatMoney = (n: any) =>
@@ -258,43 +263,57 @@ export function DataTable<TData, TValue>({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-xs font-semibold">#</TableHead>
-              <TableHead className="text-xs font-semibold">Stock #</TableHead>
-              <TableHead className="text-xs font-semibold">
+              <TableHead className="text-sm font-semibold">#</TableHead>
+              <TableHead className="text-sm font-semibold">
+                Stock Code
+              </TableHead>
+              <TableHead className="text-sm font-semibold">
                 Description
               </TableHead>
-              <TableHead className="text-right text-xs font-semibold">Qty</TableHead>
-              <TableHead className="text-xs font-semibold">UOM</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Unit Price</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Discount</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Amount</TableHead>
-              <TableHead className="text-xs font-semibold">Tax Code</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Tax Amt</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Net Amt</TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Qty
+              </TableHead>
+              <TableHead className="text-sm font-semibold">UOM</TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Unit Price
+              </TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Discount
+              </TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Amount
+              </TableHead>
+              <TableHead className="text-sm font-semibold">Tax Code</TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Tax Amount
+              </TableHead>
+              <TableHead className="text-right text-sm font-semibold">
+                Net Amount
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.map((l) => (
               <TableRow key={l.id}>
-                <TableCell className="text-xs">{l.numbering}</TableCell>
-                <TableCell className="text-xs">{l.stock}</TableCell>
-                <TableCell className="text-xs">{l.description}</TableCell>
-                <TableCell className="text-right text-xs">{l.qty}</TableCell>
-                <TableCell className="text-xs">{l.uom}</TableCell>
-                <TableCell className="text-right text-xs">
+                <TableCell className="text-sm">{l.numbering}</TableCell>
+                <TableCell className="text-sm">{l.stock}</TableCell>
+                <TableCell className="text-sm">{l.description}</TableCell>
+                <TableCell className="text-right text-sm">{l.qty}</TableCell>
+                <TableCell className="text-sm">{l.uom}</TableCell>
+                <TableCell className="text-right text-sm">
                   {formatMoney(l.unitPrice)}
                 </TableCell>
-                <TableCell className="text-right text-xs">
+                <TableCell className="text-right text-sm">
                   {formatMoney(l.discount)}
                 </TableCell>
-                <TableCell className="text-right text-xs">
+                <TableCell className="text-right text-sm">
                   {formatMoney(l.amount)}
                 </TableCell>
-                <TableCell className="text-xs">{l.taxCode ?? '-'}</TableCell>
-                <TableCell className="text-right text-xs">
+                <TableCell className="text-sm">{l.taxCode ?? '-'}</TableCell>
+                <TableCell className="text-right text-sm">
                   {formatMoney(l.taxAmount)}
                 </TableCell>
-                <TableCell className="text-right text-xs">
+                <TableCell className="text-right text-sm">
                   {formatMoney(l.netAmount)}
                 </TableCell>
               </TableRow>
@@ -307,7 +326,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="w-full min-w-0">
           <CalendarDateRangePicker
             className="w-full"
@@ -320,72 +339,178 @@ export function DataTable<TData, TValue>({
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search CashSales Code..."
+              placeholder={
+                filterType === 'all'
+                  ? 'Search CashSales Code or Stock Location...'
+                  : filterType === 'cashsalescode'
+                  ? 'Search CashSales Code...'
+                  : 'Search Stock Location...'
+              }
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              className="h-10 w-full pl-9"
+              className="h-10 w-full pl-9 pr-9"
             />
+            {searchValue && (
+              <button
+                onClick={() => setSearchValue('')}
+                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="w-full min-w-0" ref={filterDropdownRef}>
+          <div className="relative">
+            <button
+              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {filterType === 'all' && 'All Fields'}
+                  {filterType === 'cashsalescode' && 'CashSales Code'}
+                  {filterType === 'stocklocation' && 'Stock Location'}
+                </span>
+              </div>
+              <ChevronRightIcon className="h-4 w-4 rotate-90 text-muted-foreground" />
+            </button>
+
+            {filterDropdownOpen && (
+              <div className="absolute top-full z-50 mt-2 w-full rounded-md border bg-popover shadow-md">
+                <div className="p-1">
+                  <button
+                    onClick={() => {
+                      setFilterType('all');
+                      setFilterDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <span>All Fields</span>
+                    </div>
+                    {filterType === 'all' && <Check className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilterType('cashsalescode');
+                      setFilterDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="flex items-center gap-2">
+                       <Hash  className="h-4 w-4 text-muted-foreground" />
+                      <span>CashSales Code</span>
+                    </div>
+                    {filterType === 'cashsalescode' && (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilterType('stocklocation');
+                      setFilterDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="flex items-center gap-2">
+                    <MapPinHouse  className="h-4 w-4 text-muted-foreground" />
+                      <span>Stock Location</span>
+                    </div>
+                    {filterType === 'stocklocation' && (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(80vh-220px)] rounded-md border md:h-[calc(85dvh-330px)]">
-        <Table className="relative">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-md bg-muted font-semibold text-muted-foreground"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
+      <div className="rounded-lg border bg-card">
+        {/* <div className="p-4">
+           <div className="mb-4 text-lg font-semibold">Cash Sales</div>
+         </div> */}
+
+        <div className="relative">
+          {/* Fixed Header */}
+          <div className="sticky top-2 z-10 bg-card px-4 pb-2 ">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id} className="">
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="align-middle text-sm font-semibold text-muted-foreground"
+                        style={{ width: header.getSize() }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => {
-                    setSelectedRow(row.original as any);
-                    setDialogOpen(true);
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <ScrollBar orientation="vertical" />
-      </ScrollArea>
+              </TableHeader>
+            </Table>
+          </div>
+
+          {/* Scrollable Body */}
+          <ScrollArea className="h-[calc(80vh-280px)] md:h-[calc(85dvh-380px)]">
+            <div className="px-4 pb-4">
+              <Table>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && 'selected'}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedRow(row.original as any);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="py-3"
+                            style={{ width: cell.column.getSize() }}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No Results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
+        </div>
+      </div>
 
       {/* Pagination function */}
       <div className="flex items-center justify-between px-2 pb-4">
@@ -448,9 +573,9 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
-
+      {/* Dialog Box */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[85vh] max-w-6xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-7xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cash Sales Details</DialogTitle>
             <DialogDescription>
@@ -458,24 +583,66 @@ export function DataTable<TData, TValue>({
             </DialogDescription>
           </DialogHeader>
           {detailLoading && (
-            <div className="text-md py-6 text-center text-muted-foreground">
-              Loading details…
+            <div className="space-y-6">
+              {/* Summary Table Skeleton */}
+              <div className="rounded-md border bg-card">
+                <div className="p-4">
+                  <div className="mb-4 h-6 w-48 animate-pulse rounded bg-muted"></div>
+                </div>
+                <div className="px-4 pb-4">
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex space-x-4">
+                        <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
+                        <div className="h-8 flex-1 animate-pulse rounded bg-muted"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Table Skeleton */}
+              <div className="rounded-md border">
+                <div className="p-4">
+                  <div className="mb-4 h-6 w-24 animate-pulse rounded bg-muted"></div>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="h-full w-full">
+                    <div className="px-4 pb-4">
+                      <div className="space-y-4">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="flex space-x-6">
+                            <div className="h-4 w-8 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-32 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-12 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-16 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-16 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-16 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                            <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {detailError && (
             <div className="py-6 text-sm text-red-600">{detailError}</div>
           )}
           {!detailLoading && !detailError && detail && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <SummaryTable data={detail} />
-              <div>
-                <div className="mb-2 text-sm font-semibold">Items</div>
-                <div className="overflow-x-auto">
-                  <ScrollArea className="h-[45vh]">
-                    <DetailsTable lines={detail.details || []} />
-                    <ScrollBar orientation="vertical" />
-                  </ScrollArea>
-                </div>
+              <div className="overflow-x-auto">
+                <ScrollArea className="h-[60vh] w-full">
+                  <DetailsTable lines={detail.details || []} />
+                  <ScrollBar orientation="vertical" />
+                </ScrollArea>
               </div>
             </div>
           )}
