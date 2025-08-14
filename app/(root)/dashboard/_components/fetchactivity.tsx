@@ -66,12 +66,12 @@ export default function FetchActivity() {
       <CardContent className="flex-1 overflow-y-auto p-4">
         <ul className="space-y-5">
           {loading && (
-            <li className="text-sm text-muted-foreground">
+            <li className="text-sm text-center text-muted-foreground">
               Loading Activity....
             </li>
           )}
           {!loading && activities.length === 0 && (
-            <li className="text-sm text-muted-foreground">No Activity Yet</li>
+            <li className="text-sm text-center align-middle text-muted-foreground">No Activity Yet</li>
           )}
           {activities.map((item) => {
             return (
@@ -82,8 +82,8 @@ export default function FetchActivity() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm">{item.description}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="text-xs">{item.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Fetched Data Count:{' '}
                         <span className="font-semibold">{item.count}</span>
                       </p>

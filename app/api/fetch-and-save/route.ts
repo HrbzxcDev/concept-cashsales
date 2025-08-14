@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/utils/db/drizzle';
 import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Types
 interface ExternalAPICashSale {
@@ -170,15 +170,23 @@ export async function GET(request: NextRequest) {
     console.log('Upsert:', upsert);
 
     // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split('T')[0];
 
     // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
 
     // Add OData parameters
     queryParams.append('$skip', '0');
-    queryParams.append('$top', limit > 0 ? limit.toString() : '100');
-    queryParams.append('$filter', `cashsalesdate ge ${today}`);
+    queryParams.append('$top', limit > 0 ? limit.toString() : '1000');
+    // Use provided date range if available, otherwise default to [yesterday, today)
+    const fromDate = dateFrom || yesterday;
+    const toDate = dateTo || today;
+    queryParams.append('$filter', `cashsalesdate ge ${fromDate} and cashsalesdate lt ${toDate}`);
+
 
     // Construct the full URL
     const url = `${API_BASE_URL}?${queryParams.toString()}`;
@@ -208,13 +216,33 @@ export async function GET(request: NextRequest) {
     );
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
-      // Save activity for empty response
+      // Save activity for empty response, but avoid duplicates for the same date
       try {
-        await saveAPIFetchActivity(
-          'API Fetch Operation - No data Returned From External API',
-          0,
-          true
-        );
+        const existingNoData = await db
+          .select({ id: apifetchedTable.id })
+          .from(apifetchedTable)
+          .where(
+            and(
+              eq(apifetchedTable.datefetched, today),
+              eq(
+                apifetchedTable.description,
+                'API Fetch Operation - No data Returned From External API'
+              )
+            )
+          )
+          .limit(1);
+
+        if (existingNoData.length === 0) {
+          await saveAPIFetchActivity(
+            'API Fetch Operation - No data Returned From External API',
+            0,
+            true
+          );
+        } else {
+          console.log(
+            `Skipping duplicate no-data activity for ${today} (already logged)`
+          );
+        }
       } catch (activityError) {
         console.error(
           'Failed to save API fetch activity for empty response:',
@@ -303,6 +331,7 @@ export async function GET(request: NextRequest) {
     let updatedCount = 0;
     const errors: string[] = [];
     const savedData: any[] = [];
+    const collectedCodes: string[] = [];
 
     // Process each record
     for (const item of validRecords) {
@@ -326,6 +355,10 @@ export async function GET(request: NextRequest) {
           JSON.stringify(transformedData, null, 2)
         );
 
+        if (transformedData.cashsalescode && transformedData.cashsalescode.trim() !== '') {
+          collectedCodes.push(transformedData.cashsalescode.trim());
+        }
+
         if (upsert) {
           // Check if record exists
           const existingRecord = await db
@@ -335,20 +368,37 @@ export async function GET(request: NextRequest) {
             .limit(100);
 
           if (existingRecord.length > 0) {
-            // Update existing record
-            const updatedRecord = await db
-              .update(cashsalesTable)
-              .set({
-                ...transformedData,
-                updatedAt: new Date()
-              })
-              .where(
-                eq(cashsalesTable.cashsalesid, transformedData.cashsalesid)
-              )
-              .returning();
+            // Update existing record only if there are actual changes
+            const current = existingRecord[0] as any;
+            const currentDate = current?.cashsalesdate
+              ? new Date(current.cashsalesdate).toISOString().split('T')[0]
+              : '';
+            const hasChanges =
+              currentDate !== transformedData.cashsalesdate ||
+              current?.cashsalescode !== transformedData.cashsalescode ||
+              current?.customer !== transformedData.customer ||
+              current?.stocklocation !== transformedData.stocklocation ||
+              Boolean(current?.status) !== Boolean(transformedData.status);
 
-            updatedCount++;
-            savedData.push(updatedRecord[0]);
+            if (hasChanges) {
+              const updatedRecord = await db
+                .update(cashsalesTable)
+                .set({
+                  ...transformedData,
+                  updatedAt: new Date()
+                })
+                .where(
+                  eq(cashsalesTable.cashsalesid, transformedData.cashsalesid)
+                )
+                .returning();
+
+              updatedCount++;
+              savedData.push(updatedRecord[0]);
+            } else {
+              console.log(
+                `No-op update skipped for cashsalesid=${transformedData.cashsalesid}`
+              );
+            }
           } else {
             // Insert new record
             const newRecord = await db
@@ -396,22 +446,95 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Save API fetch activity to database
+    // Save API fetch activity to database (avoid duplicate no-op logs per day)
     try {
       const activityDescription = `API Fetch Operation - ${
         upsert ? 'Upsert' : 'Insert only'
       } Mode.`;
 
-      await saveAPIFetchActivity(
-        activityDescription,
-        validRecords.length,
-        errors.length === 0
-      );
+      // Only save the success activity if there were actual DB changes
+      // (i.e., at least one record saved or updated). Otherwise, skip logging.
+      const shouldSaveActivity = savedCount > 0 || updatedCount > 0;
+      if (!shouldSaveActivity) {
+        console.log('Skipping activity log (no DB changes in this run)');
+      }
+
+      if (shouldSaveActivity) {
+        await saveAPIFetchActivity(
+          activityDescription,
+          validRecords.length,
+          errors.length === 0
+        );
+      }
 
       console.log('API fetch activity saved successfully');
     } catch (activityError) {
       console.error('Failed to save API fetch activity:', activityError);
       // Don't fail the main operation if activity logging fails
+    }
+
+    // Detect and log skipped cashsalescode sequences
+    try {
+      // Group codes by their non-numeric prefix and analyze numeric suffix gaps
+      type GroupInfo = {
+        observedNumbers: Set<number>;
+        minNumber: number;
+        maxNumber: number;
+        digitWidth: number;
+      };
+
+      const prefixToGroup: Record<string, GroupInfo> = {};
+
+      for (const code of collectedCodes) {
+        const match = code.match(/^(.*?)(\d+)\s*$/);
+        if (!match) continue;
+        const prefix = match[1];
+        const numberPart = match[2];
+        const numericValue = parseInt(numberPart, 10);
+        if (Number.isNaN(numericValue)) continue;
+
+        const existing = prefixToGroup[prefix];
+        if (!existing) {
+          prefixToGroup[prefix] = {
+            observedNumbers: new Set([numericValue]),
+            minNumber: numericValue,
+            maxNumber: numericValue,
+            digitWidth: numberPart.length
+          };
+        } else {
+          existing.observedNumbers.add(numericValue);
+          if (numericValue < existing.minNumber) existing.minNumber = numericValue;
+          if (numericValue > existing.maxNumber) existing.maxNumber = numericValue;
+          if (numberPart.length > existing.digitWidth) existing.digitWidth = numberPart.length;
+        }
+      }
+
+      let totalMissing = 0;
+      const missingcodes: string[] = [];
+
+      for (const [prefix, group] of Object.entries(prefixToGroup)) {
+        for (let n = group.minNumber; n <= group.maxNumber; n++) {
+          if (!group.observedNumbers.has(n)) {
+            totalMissing++;
+            if (missingcodes.length < 5) {
+              const padded = String(n).padStart(group.digitWidth, '0');
+              missingcodes.push(`${prefix}${padded}`);
+            }
+          }
+        }
+      }
+
+      if (totalMissing > 0) {
+        const missingcashcodes = missingcodes.join(', ');
+        const description = missingcashcodes
+          ? `Skipped CashSalesCodes: ${missingcashcodes}`
+          : `Skipped CashSalesCodes: ${totalMissing}.`;
+
+        await saveAPIFetchActivity(description, totalMissing, true);
+      }
+    } catch (validationError) {
+      console.error('Failed to validate and log skipped cashsalescode:', validationError);
+      // Do not interrupt the main flow
     }
 
     const responseData: FetchAndSaveResponse = {
