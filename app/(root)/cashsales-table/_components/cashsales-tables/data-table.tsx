@@ -348,7 +348,7 @@ export function DataTable<TData, TValue>({
               }
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              className="h-10 w-full pl-9 pr-9"
+              className="h-10 w-full pl-9 pr-9 placeholder:text-sm"
             />
             {searchValue && (
               <button

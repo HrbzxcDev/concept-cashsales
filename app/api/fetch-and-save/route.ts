@@ -149,8 +149,10 @@ async function saveAPIFetchActivity(
  * Server-side GET function that fetches data from external API and saves to database
  */
 export async function GET(request: NextRequest) {
+  const requestURL = new URL(request.url);
+  const customDescription = requestURL.searchParams.get('description') || '';
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = requestURL;
 
     // Get query parameters
     const limit = parseInt(searchParams.get('limit') || '100');
@@ -181,7 +183,7 @@ export async function GET(request: NextRequest) {
 
     // Add OData parameters
     queryParams.append('$skip', '0');
-    queryParams.append('$top', limit > 0 ? limit.toString() : '1000');
+    queryParams.append('$top', limit > 0 ? limit.toString() : '100');
     // Use provided date range if available, otherwise default to [yesterday, today)
     const fromDate = dateFrom || yesterday;
     const toDate = dateTo || today;
@@ -207,15 +209,15 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error Response:', errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      throw new Error(`HTTP error! status: <span class="text-[#ef4444]">${response.status}</span> - ${errorText}`);
     }
 
     const apiData: ExternalAPICashSale[] = await response.json();
     console.log(`Fetched ${apiData.length} records from external API`);
-    console.log(
-      'Raw API response sample:',
-      JSON.stringify(apiData.slice(0, 2), null, 2)
-    );
+    // console.log(
+    //   'Raw API response sample:',
+    //   JSON.stringify(apiData.slice(0, 2), null, 2)
+    // );
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
       // Save activity for empty response, but avoid duplicates for the same date
@@ -235,11 +237,11 @@ export async function GET(request: NextRequest) {
           .limit(1);
 
         if (existingNoData.length === 0) {
-          await saveAPIFetchActivity(
-            'API Fetch Operation - No data Returned From External API',
-            0,
-            true
-          );
+          const baseNoDataDesc = 'API Fetch Operation - No Data Returned ';
+          const noDataDescription = customDescription
+            ? `${customDescription} - ${baseNoDataDesc}`
+            : baseNoDataDesc;
+          await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
           console.log(
             `Skipping duplicate no-data activity for ${today} (already logged)`
@@ -263,11 +265,11 @@ export async function GET(request: NextRequest) {
 
     // Filter out invalid records (those without cashsalesid)
     const validRecords = apiData.filter((item) => {
-      console.log('Checking item:', JSON.stringify(item, null, 2));
-      console.log('Item keys:', Object.keys(item || {}));
-      console.log('Item cashsalesid:', item?.cashsalesid);
-      console.log('Item cashsalesid type:', typeof item?.cashsalesid);
-      console.log('Item cashsalesid trimmed:', item?.cashsalesid?.trim());
+      // console.log('Checking item:', JSON.stringify(item, null, 2));
+      // console.log('Item keys:', Object.keys(item || {}));
+      // console.log('Item cashsalesid:', item?.cashsalesid);
+      // console.log('Item cashsalesid type:', typeof item?.cashsalesid);
+      // console.log('Item cashsalesid trimmed:', item?.cashsalesid?.trim());
 
       // Try different possible field names for cashsalesid
       const possibleIdFields = [
@@ -283,14 +285,14 @@ export async function GET(request: NextRequest) {
         const itemAny = item as any;
         if (item && itemAny[field] && String(itemAny[field]).trim() !== '') {
           cashsalesid = String(itemAny[field]).trim();
-          console.log(`Found cashsalesid in field '${field}':`, cashsalesid);
+          // console.log(`Found cashsalesid in field '${field}':`, cashsalesid);
           break;
         }
       }
 
       const isValid = cashsalesid !== null;
 
-      console.log('Is valid:', isValid);
+      // console.log('Is valid:', isValid);
 
       if (!isValid) {
         console.warn(
@@ -339,23 +341,23 @@ export async function GET(request: NextRequest) {
     for (const item of validRecords) {
       try {
         // Log the raw item for debugging
-        console.log('Processing item:', JSON.stringify(item, null, 2));
+        // console.log('Processing item:', JSON.stringify(item, null, 2));
 
         // Log the raw item before transformation for debugging
-        console.log('=== DEBUGGING EMPTY FIELDS ===');
-        console.log('Raw API item:', JSON.stringify(item, null, 2));
-        console.log('Available fields in item:', Object.keys(item || {}));
-        console.log('cashsalescode field:', item?.cashsalescode);
-        console.log('customer field:', item?.customer);
-        console.log('stocklocation field:', item?.stocklocation);
-        console.log('status field:', item?.status);
-        console.log('=== END DEBUG ===');
+        // console.log('=== DEBUGGING EMPTY FIELDS ===');
+        // console.log('Raw API item:', JSON.stringify(item, null, 2));
+        // console.log('Available fields in item:', Object.keys(item || {}));
+        // console.log('cashsalescode field:', item?.cashsalescode);
+        // console.log('customer field:', item?.customer);
+        // console.log('stocklocation field:', item?.stocklocation);
+        // console.log('status field:', item?.status);
+        // console.log('=== END DEBUG ===');
 
         const transformedData = transformAPIToDB(item);
-        console.log(
-          'Transformed data:',
-          JSON.stringify(transformedData, null, 2)
-        );
+        // console.log(
+        //   'Transformed data:',
+        //   JSON.stringify(transformedData, null, 2)
+        // );
 
         if (
           transformedData.cashsalescode &&
@@ -400,9 +402,9 @@ export async function GET(request: NextRequest) {
               updatedCount++;
               savedData.push(updatedRecord[0]);
             } else {
-              console.log(
-                `No-op update skipped for cashsalesid=${transformedData.cashsalesid}`
-              );
+              // console.log(
+              //   `No-op update skipped for cashsalesid=${transformedData.cashsalesid}`
+              // );
             }
           } else {
             // Insert new record
@@ -453,13 +455,19 @@ export async function GET(request: NextRequest) {
 
     // Save API fetch activity to database (avoid duplicate no-op logs per day)
     try {
-      const activityDescription = `API Fetch Operation - ${
+      const baseDescription = `API Fetch Operation Successful - ${
         upsert ? 'Upsert' : 'Insert only'
       } Mode.`;
+      const activityDescription = customDescription
+        ? `${customDescription} - ${baseDescription}`
+        : baseDescription;
 
-      // Only save the success activity if there were actual DB changes
-      // (i.e., at least one record saved or updated). Otherwise, skip logging.
-      const shouldSaveActivity = savedCount > 0 || updatedCount > 0;
+      // Save success activity when there are DB changes.
+      // If a custom description is provided (manual fetch), always log the activity
+      // even when there are no DB changes, so manual runs are visible in history.
+      const shouldSaveActivity = customDescription
+        ? true
+        : savedCount > 0 || updatedCount > 0;
       if (!shouldSaveActivity) {
         console.log('Skipping activity log (no DB changes in this run)');
       }
@@ -472,7 +480,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log('API fetch activity saved successfully');
+      console.log('API Fetch Activity Saved Successfully');
     } catch (activityError) {
       console.error('Failed to save API fetch activity:', activityError);
       // Don't fail the main operation if activity logging fails
@@ -550,9 +558,9 @@ export async function GET(request: NextRequest) {
 
     const responseData: FetchAndSaveResponse = {
       success: errors.length === 0,
-      message: `Successfully processed ${validRecords.length} valid records (${
+      message: `Successfully Processed ${validRecords.length} Valid Records (${
         apiData.length - validRecords.length
-      } invalid skipped). Saved: ${savedCount}, Updated: ${updatedCount}${
+      } Invalid Skipped). Saved: ${savedCount}, Updated: ${updatedCount}${
         errors.length > 0 ? `, Errors: ${errors.length}` : ''
       }`,
       savedCount,
@@ -564,7 +572,7 @@ export async function GET(request: NextRequest) {
       responseData.errors = errors;
     }
 
-    console.log('Operation completed:', responseData.message);
+    console.log('Operation Completed:', responseData.message);
 
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
@@ -572,16 +580,16 @@ export async function GET(request: NextRequest) {
 
     // Save activity for failed operation
     try {
-      await saveAPIFetchActivity(
-        `API Fetch Operation Failed - ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        0,
-        false
-      );
+      const baseFailDesc = `API Fetch Operation Failed - ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`;
+      const failDescription = customDescription
+        ? `${customDescription} - ${baseFailDesc}`
+        : baseFailDesc;
+      await saveAPIFetchActivity(failDescription, 0, false);
     } catch (activityError) {
       console.error(
-        'Failed to save API fetch activity for error:',
+        'Failed To Save API Fetch Activity For Error:',
         activityError
       );
     }
@@ -590,7 +598,8 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         message:
-          error instanceof Error ? error.message : 'An unknown error occurred'
+          error instanceof Error ? error.message : 'An unknown error occurred',
+        httpStatus: `<span class="text-[#ef4444]">500</span>`
       },
       { status: 500 }
     );

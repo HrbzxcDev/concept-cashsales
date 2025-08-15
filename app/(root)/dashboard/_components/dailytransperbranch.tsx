@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getDailyTransactionPerLocation } from '@/actions/getdata';
-import { TrendingUp } from 'lucide-react';
+import { MapPinHouse } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -174,12 +174,12 @@ export function ChartLineMultiple() {
                 })
               }
             />
-            <YAxis
+            {/* <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={20}
               tickFormatter={(value) => value.toLocaleString()}
-            />
+            /> */}
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             {locations.map((location) => (
               <Line
@@ -199,7 +199,7 @@ export function ChartLineMultiple() {
           <div className="grid gap-2">
             <div className="flex items-center gap-2 text-base font-medium leading-none">
               {locations.length} Locations Tracked{' '}
-              <TrendingUp className="h-5 w-5" />
+              <MapPinHouse className="h-5 w-5" />
             </div>
             <div className="flex items-center gap-2 leading-none text-muted-foreground">
               Showing daily transaction counts for {locations.length} locations

@@ -37,7 +37,7 @@ function initializeCronJobs() {
 
   // Schedule fetch-and-save job to run every minute
   cronService.scheduleJob({
-    name: 'fetch-and-save-data',
+    name: 'Fetch-and-Save-Data',
     schedule: CRON_SCHEDULES.EVERY_MINUTE, // Every minute
     task: fetchAndSaveData
   });
