@@ -1,8 +1,8 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { CellAction } from './cell-action';
-import { Checkbox } from '@/components/ui/checkbox';
+// import { CellAction } from './cell-action';
+// import { Checkbox } from '@/components/ui/checkbox';
 
 export type cashsales = {
   id: string;
@@ -33,7 +33,6 @@ export const Cashsalescolumns: ColumnDef<cashsales>[] = [
   //   enableHiding: true
   // },
 
-
   {
     accessorKey: 'cashsalesdate',
     header: () => <div className="text-left">CashSales Date</div>,
@@ -57,8 +56,8 @@ export const Cashsalescolumns: ColumnDef<cashsales>[] = [
   {
     accessorKey: 'stocklocation',
     header: () => <div className="text-left">Stock Location</div>
-  },
-  // { 
+  }
+  // {
   //   id: 'actions',
   //   cell: ({ row }) => <CellAction data={row.original} />
   // }

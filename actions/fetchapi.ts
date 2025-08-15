@@ -159,7 +159,7 @@ export async function fetchAndSaveCashSales(
   } = options;
 
   try {
-    console.log('Starting fetch and save operation...');
+    // console.log('Starting fetch and save operation...');
 
     // Build query parameters
     const queryParams = new URLSearchParams();
@@ -185,7 +185,7 @@ export async function fetchAndSaveCashSales(
       ? `${API_BASE_URL}?${queryParams.toString()}`
       : API_BASE_URL;
 
-    console.log('Fetching data from:', url);
+    // console.log('Fetching data from:', url);
 
     // Fetch data from API
     const response = await fetch(url, {
@@ -198,12 +198,12 @@ export async function fetchAndSaveCashSales(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      // console.error('API Error Response:', errorText);
+      throw new Error(`HTTP Error! Status: ${response.status} - ${errorText}`);
     }
 
     const apiData: CashSaleAPI[] = await response.json();
-    console.log(`Fetched ${apiData.length} records from API`);
+    // console.log(`Fetched ${apiData.length} Records From API`);
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
       return {
@@ -221,11 +221,11 @@ export async function fetchAndSaveCashSales(
     // Process data in batches
     for (let i = 0; i < apiData.length; i += batchSize) {
       const batch = apiData.slice(i, i + batchSize);
-      console.log(
-        `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-          apiData.length / batchSize
-        )}`
-      );
+      // console.log(
+      //   `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+      //     apiData.length / batchSize
+      //   )}`
+      // );
 
       for (const item of batch) {
         try {
@@ -273,18 +273,18 @@ export async function fetchAndSaveCashSales(
             }
           }
         } catch (error) {
-          const errorMessage = `Error processing record ${item.cashsalesid}: ${
-            error instanceof Error ? error.message : 'Unknown error'
+          const errorMessage = `Error Processing Record ${item.cashsalesid}: ${
+            error instanceof Error ? error.message : 'Unknown Error'
           }`;
-          console.error(errorMessage);
+          // console.error(errorMessage);
           errors.push(errorMessage);
         }
       }
     }
 
-    const message = `Successfully processed ${
+    const message = `Successfully Processed ${
       apiData.length
-    } records. Saved: ${savedCount}, Updated: ${updatedCount}${
+    } Records. Saved: ${savedCount}, Updated: ${updatedCount}${
       errors.length > 0 ? `, Errors: ${errors.length}` : ''
     }`;
 
@@ -296,12 +296,12 @@ export async function fetchAndSaveCashSales(
       errors: errors.length > 0 ? errors : undefined
     };
   } catch (error) {
-    console.error('Error in fetchAndSaveCashSales:', error);
+    // console.error('Error in fetchAndSaveCashSales:', error);
 
     return {
       success: false,
       message:
-        error instanceof Error ? error.message : 'An unknown error occurred'
+        error instanceof Error ? error.message : 'An Unknown Error Occurred'
     };
   }
 }
@@ -314,7 +314,7 @@ export async function fetchAndSaveCashSaleById(
   upsert: boolean = false
 ): Promise<FetchAndSaveResponse> {
   try {
-    console.log(`Fetching and saving cash sale with ID: ${id}`);
+    // console.log(`Fetching and saving cash sale with ID: ${id}`);
 
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'GET',
@@ -601,6 +601,6 @@ export async function fetchCashSalesToday(
   updatedCount?: number;
   errors?: string[];
 }> {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
   return fetchCashSalesByDate(today, options);
 }

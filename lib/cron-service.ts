@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 
 interface CronJobConfig {
   schedule: string;
@@ -22,32 +22,28 @@ class CronService {
 
     // Initialized once the schedule is running
     // Create new job
-    const job = cron.schedule(
-      schedule,
-      async () => {
-        try {
-          console.log(
-            `[${new Date().toISOString()}] Starting Cron Jobs: ${name}`
-          );
-          await task();
-          console.log(
-            `[${new Date().toISOString()}] Completed Cron Jobs: ${name}`
-          );
-        } catch (error) {
-          console.error(
-            `[${new Date().toISOString()}] Error in Cron Jobs ${name}:`,
-            error
-          );
-        }
-      },
-      {
-        scheduled: false
+    const job = cron.schedule(schedule, async () => {
+      try {
+        console.log(
+          `[${new Date().toISOString()}] Starting Cron Jobs: ${name}`
+        );
+        await task();
+        console.log(
+          `[${new Date().toISOString()}] Completed Cron Jobs: ${name}`
+        );
+      } catch (error) {
+        console.error(
+          `[${new Date().toISOString()}] Error in Cron Jobs ${name}:`,
+          error
+        );
       }
-    );
+    });
 
     this.jobs.set(name, job);
     job.start();
-    console.log(`Scheduled Cron Jobs "${name}" With Schedule: ${schedule} (Every Minute)`);
+    console.log(
+      `Scheduled Cron Jobs "${name}" With Schedule: ${schedule} (Every Minute)`
+    );
   }
 
   /**

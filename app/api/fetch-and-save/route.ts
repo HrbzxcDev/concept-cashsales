@@ -62,7 +62,8 @@ function transformAPIToDB(apiData: any) {
       if (isNaN(date.getTime())) {
         throw new Error(`Invalid date format: ${dateStr}`);
       }
-      return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+      // Return YYYY-MM-DD format in local timezone
+      return date.toLocaleDateString('en-CA');
     } catch (error) {
       throw new Error(
         `Error parsing date: ${dateStr} - ${
@@ -112,7 +113,7 @@ async function saveAPIFetchActivity(
 ) {
   try {
     const now = new Date();
-    const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const currentDate = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
     const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
 
     // Create activity record
@@ -171,12 +172,12 @@ export async function GET(request: NextRequest) {
     console.log('Limit:', limit);
     console.log('Upsert:', upsert);
 
-    // Get today's date in YYYY-MM-DD format
+    // Get today's date in YYYY-MM-DD format (local timezone)
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
     const yesterdayDate = new Date(now);
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split('T')[0];
+    yesterdayDate.setDate(now.getDate() - 1);
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
 
     // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
@@ -209,7 +210,9 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error Response:', errorText);
-      throw new Error(`HTTP error! status: <span class="text-[#ef4444]">${response.status}</span> - ${errorText}`);
+      throw new Error(
+        `HTTP error! status: <span class="text-[#ef4444]">${response.status}</span> - ${errorText}`
+      );
     }
 
     const apiData: ExternalAPICashSale[] = await response.json();
@@ -378,7 +381,7 @@ export async function GET(request: NextRequest) {
             // Update existing record only if there are actual changes
             const current = existingRecord[0] as any;
             const currentDate = current?.cashsalesdate
-              ? new Date(current.cashsalesdate).toISOString().split('T')[0]
+              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA')
               : '';
             const hasChanges =
               currentDate !== transformedData.cashsalesdate ||

@@ -10,7 +10,7 @@ export async function gettotaltrans() {
 
     return result[0]?.count || 0;
   } catch (error) {
-    console.error('Error getting total transactions:', error);
+    // console.error('Error getting total transactions:', error);
     return 0;
   }
 }
@@ -23,7 +23,7 @@ export async function gettotalbranch() {
 
     return result[0]?.count || 0;
   } catch (error) {
-    console.error('Error getting total unique branches:', error);
+    // console.error('Error getting total unique branches:', error);
     return 0;
   }
 }
@@ -39,7 +39,7 @@ export async function getCashsalesData() {
       );
     return result;
   } catch (error) {
-    console.error('Error getting cashsales data:', error);
+    // console.error('Error getting cashsales data:', error);
     return [];
   }
 }
@@ -57,17 +57,23 @@ export async function getTransactionCountPerLocation() {
 
     return result;
   } catch (error) {
-    console.error('Error getting transaction count per location:', error);
+    // console.error('Error getting transaction count per location:', error);
     return [];
   }
 }
 
 export async function getPercentageChangeTotalTransaction() {
   try {
-    // Get yesterday's date
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() -1); // remove -1
-    const yesterdayString = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    // Get yesterday's date in local timezone to avoid UTC issues
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    // Format date in local timezone (YYYY-MM-DD)
+    const year = yesterday.getFullYear();
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const day = String(yesterday.getDate()).padStart(2, '0');
+    const yesterdayString = `${year}-${month}-${day}`;
 
     // Get total transactions count
     const totalResult = await db
@@ -98,10 +104,7 @@ export async function getPercentageChangeTotalTransaction() {
       yesterdayDate: yesterdayString
     };
   } catch (error) {
-    console.error(
-      'Error getting transaction percentage from yesterday:',
-      error
-    );
+    // console.error('Error getting transaction percentage from yesterday:', error);
     return {
       totalTransactions: 0,
       yesterdayTransactions: 0,
@@ -125,7 +128,7 @@ export async function getDailyTransactionPerLocation() {
 
     return result;
   } catch (error) {
-    console.error('Error getting daily transactions per location:', error);
+    // console.error('Error getting daily transactions per location:', error);
     return [];
   }
 }
@@ -158,7 +161,7 @@ export async function getRecentApiFetches(limit: number = 10) {
       count: Number(row.count as unknown as number)
     }));
   } catch (error) {
-    console.error('Error getting recent API fetches:', error);
+    // console.error('Error getting recent API fetches:', error);
     return [];
   }
 }
