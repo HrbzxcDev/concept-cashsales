@@ -9,7 +9,6 @@ import {
   LineChart,
   XAxis,
   YAxis,
-  ResponsiveContainer
 } from 'recharts';
 
 import {
