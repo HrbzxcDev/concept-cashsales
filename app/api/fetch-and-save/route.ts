@@ -185,8 +185,10 @@ export async function GET(request: NextRequest) {
     // Use provided date range if available, otherwise default to [yesterday, today)
     const fromDate = dateFrom || yesterday;
     const toDate = dateTo || today;
-    queryParams.append('$filter', `cashsalesdate ge ${fromDate} and cashsalesdate lt ${toDate}`);
-
+    queryParams.append(
+      '$filter',
+      `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
+    );
 
     // Construct the full URL
     const url = `${API_BASE_URL}?${queryParams.toString()}`;
@@ -355,7 +357,10 @@ export async function GET(request: NextRequest) {
           JSON.stringify(transformedData, null, 2)
         );
 
-        if (transformedData.cashsalescode && transformedData.cashsalescode.trim() !== '') {
+        if (
+          transformedData.cashsalescode &&
+          transformedData.cashsalescode.trim() !== ''
+        ) {
           collectedCodes.push(transformedData.cashsalescode.trim());
         }
 
@@ -503,9 +508,12 @@ export async function GET(request: NextRequest) {
           };
         } else {
           existing.observedNumbers.add(numericValue);
-          if (numericValue < existing.minNumber) existing.minNumber = numericValue;
-          if (numericValue > existing.maxNumber) existing.maxNumber = numericValue;
-          if (numberPart.length > existing.digitWidth) existing.digitWidth = numberPart.length;
+          if (numericValue < existing.minNumber)
+            existing.minNumber = numericValue;
+          if (numericValue > existing.maxNumber)
+            existing.maxNumber = numericValue;
+          if (numberPart.length > existing.digitWidth)
+            existing.digitWidth = numberPart.length;
         }
       }
 
@@ -533,7 +541,10 @@ export async function GET(request: NextRequest) {
         await saveAPIFetchActivity(description, totalMissing, true);
       }
     } catch (validationError) {
-      console.error('Failed to validate and log skipped cashsalescode:', validationError);
+      console.error(
+        'Failed to validate and log skipped cashsalescode:',
+        validationError
+      );
       // Do not interrupt the main flow
     }
 

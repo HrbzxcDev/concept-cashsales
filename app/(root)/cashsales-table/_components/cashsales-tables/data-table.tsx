@@ -180,7 +180,7 @@ export function DataTable<TData, TValue>({
         setDetail(res);
       } catch (err) {
         setDetailError(
-          err instanceof Error ? err.message : 'Failed to load details'
+          err instanceof Error ? err.message : 'Failed To Load Details'
         );
         setDetail(null);
       } finally {
@@ -633,7 +633,7 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           {detailError && (
-            <div className="py-6 text-sm text-red-600">{detailError}</div>
+            <div className="py-6 text-lg text-center text-red-500">{detailError}</div>
           )}
           {!detailLoading && !detailError && detail && (
             <div className="space-y-6">
