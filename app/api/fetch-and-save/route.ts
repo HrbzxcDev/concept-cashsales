@@ -62,8 +62,8 @@ function transformAPIToDB(apiData: any) {
       if (isNaN(date.getTime())) {
         throw new Error(`Invalid date format: ${dateStr}`);
       }
-      // Return YYYY-MM-DD format in local timezone
-      return date.toLocaleDateString('en-CA');
+      // Return YYYY-MM-DD format in Philippine timezone
+      return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
     } catch (error) {
       throw new Error(
         `Error parsing date: ${dateStr} - ${
@@ -113,8 +113,8 @@ async function saveAPIFetchActivity(
 ) {
   try {
     const now = new Date();
-    const currentDate = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
-    const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
+    const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
+    const currentTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Manila' }).split(' ')[0]; // HH:MM:SS format in Philippine timezone
 
     // Create activity record
     const activityRecord = await db
@@ -172,12 +172,12 @@ export async function GET(request: NextRequest) {
     console.log('Limit:', limit);
     console.log('Upsert:', upsert);
 
-    // Get today's date in YYYY-MM-DD format (local timezone)
+    // Get today's date in YYYY-MM-DD format (Philippine timezone)
     const now = new Date();
-    const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
+    const today = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
     const yesterdayDate = new Date(now);
     yesterdayDate.setDate(now.getDate() - 1);
-    const yesterday = yesterdayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
 
     // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
@@ -381,7 +381,7 @@ export async function GET(request: NextRequest) {
             // Update existing record only if there are actual changes
             const current = existingRecord[0] as any;
             const currentDate = current?.cashsalesdate
-              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA')
+              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
               : '';
             const hasChanges =
               currentDate !== transformedData.cashsalesdate ||
