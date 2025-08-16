@@ -39,7 +39,8 @@ import {
   Filter,
   Check,
   MapPinHouse,
-  Hash
+  Hash,
+  Braces
 } from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
@@ -78,6 +79,7 @@ export function DataTable<TData, TValue>({
   );
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
+  const [jsonDialogOpen, setJsonDialogOpen] = React.useState(false);
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -212,10 +214,25 @@ export function DataTable<TData, TValue>({
       ['Project', data.project ?? '-']
     ] as any;
 
+    const handleViewJSON = () => {
+      setJsonDialogOpen(true);
+    };
+
     return (
       <div className="rounded-md border bg-card">
         <div className="p-4">
-          <div className="mb-4 text-lg font-semibold">Transaction Summary</div>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-lg font-semibold">Transaction Summary</div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewJSON}
+              className="flex items-center gap-2"
+            >
+              <Braces className="h-4 w-4" />
+              View JSON
+            </Button>
+          </div>
         </div>
         <div className="px-4 pb-4">
           <Table>
@@ -258,6 +275,8 @@ export function DataTable<TData, TValue>({
         String(b.description || '')
       );
     });
+
+    //Dialog Box Table
     return (
       <div className="rounded-md border">
         <Table>
@@ -474,7 +493,7 @@ export function DataTable<TData, TValue>({
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && 'selected'}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className="cursor-pointer hover:bg-muted/50 "
                         onClick={() => {
                           setSelectedRow(row.original as any);
                           setDialogOpen(true);
@@ -483,7 +502,7 @@ export function DataTable<TData, TValue>({
                         {row.getVisibleCells().map((cell) => (
                           <TableCell
                             key={cell.id}
-                            className="py-3"
+                            className="py-2.5"
                             style={{ width: cell.column.getSize() }}
                           >
                             {flexRender(
@@ -573,9 +592,10 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+
       {/* Dialog Box */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-7xl overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-7xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cash Sales Details</DialogTitle>
             <DialogDescription>
@@ -611,7 +631,7 @@ export function DataTable<TData, TValue>({
                     <div className="px-4 pb-4">
                       <div className="space-y-4">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex space-x-6">
+                          <div key={i} className="flex space-x-8">
                             <div className="h-4 w-8 animate-pulse rounded bg-muted"></div>
                             <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
                             <div className="h-4 w-32 animate-pulse rounded bg-muted"></div>
@@ -643,6 +663,27 @@ export function DataTable<TData, TValue>({
                   <DetailsTable lines={detail.details || []} />
                   <ScrollBar orientation="vertical" />
                 </ScrollArea>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* JSON Dialog */}
+      <Dialog open={jsonDialogOpen} onOpenChange={setJsonDialogOpen}>
+        <DialogContent className="max-h-[90vh] max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Transaction JSON Data</DialogTitle>
+            <DialogDescription>
+              Raw JSON data for the selected transaction.
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted p-4">
+                <pre className="whitespace-pre-wrap text-sm overflow-auto max-h-[60vh]">
+                  {JSON.stringify(detail, null, 2)}
+                </pre>
               </div>
             </div>
           )}
