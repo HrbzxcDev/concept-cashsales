@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         ? `https://${process.env.VERCEL_URL}`
         : 'http://localhost:3000';
 
-    // Prepare comprehensive authentication headers
+    // Prepare authentication headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'User-Agent': 'Vercel-Cron-Job/1.0'
@@ -56,6 +56,20 @@ export async function GET(request: NextRequest) {
       headers[customAuthHeader] = customAuthValue;
     }
 
+    // Add NextAuth session cookie if available
+    const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+    if (nextAuthSecret) {
+      // Create a simple session token for internal API calls
+      const sessionData = {
+        user: { id: 'cron-job', email: 'cron@system.local' },
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      };
+      const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString(
+        'base64'
+      );
+      headers['Cookie'] = `next-auth.session-token=${sessionToken}`;
+    }
+
     console.log('[CRON] Making request with headers:', Object.keys(headers));
 
     // Call the existing fetch-and-save endpoint
@@ -77,7 +91,7 @@ export async function GET(request: NextRequest) {
           '[CRON] Authentication error - check authentication configuration'
         );
         throw new Error(
-          `Authentication error: ${response.status} - Check API_KEY, CRON_SECRET, or other auth variables`
+          `Authentication error: ${response.status} - Check API_KEY, CRON_SECRET, NEXTAUTH_SECRET, or other auth variables`
         );
       }
 

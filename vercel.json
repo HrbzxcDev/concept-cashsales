@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/fetch-data",
-      "schedule": "30 23 * * *"
+      "path": "/api/fetch-and-save",
+      "schedule": "0 20 * * *"
     }
   ]
 }
