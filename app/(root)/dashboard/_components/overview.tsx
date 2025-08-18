@@ -129,7 +129,7 @@ export default function Overview({
           </CardContent>
           <div className="absolute bottom-8 right-8">
             <Sparkline
-              data={getDailyCountsData(cashsalesData, 12)}
+              data={getDailyCountsData(cashsalesData, 30)}
               className="h-12 w-28"
               color="#7c6cf2"
             />
@@ -158,7 +158,7 @@ export default function Overview({
           </CardContent>
           <div className="absolute bottom-8 right-8">
             <Sparkline
-              data={getDailyCountsData(cashsalesData, 12)}
+              data={getDailyCountsData(cashsalesData, 30)}
               className="h-12 w-28"
               color="#ef4444"
             />
@@ -201,7 +201,7 @@ export default function Overview({
           </CardContent>
           <div className="absolute bottom-8 right-8">
             <Sparkline
-              data={getPercentageSeries(cashsalesData, 12)}
+              data={getPercentageSeries(cashsalesData, 30)}
               className="h-12 w-28"
               color="#10b981"
             />
@@ -238,7 +238,7 @@ export default function Overview({
           </CardContent>
           <div className="absolute bottom-1 right-8">
             <Sparkline
-              data={getFlatSeries(totalBranch, 12)}
+              data={getFlatSeries(totalBranch, 30)}
               className="h-12 w-28"
               color="#94a3b8"
             />
@@ -246,9 +246,9 @@ export default function Overview({
         </Card>
       </div>
 
-      <Separator className="my-4" />
+      {/* <Separator className="my-4 rounded-2xl border-1" /> */}
 
-      <div className="mt-8">
+      <div className="mt-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div>

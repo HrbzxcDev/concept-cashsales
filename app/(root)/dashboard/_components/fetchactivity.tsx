@@ -117,7 +117,7 @@ export default function FetchActivity() {
           {activities.map((item) => {
             return (
               <li key={item.id} className="flex items-start gap-4">
-                <div className="mt-1 mt-2">
+                <div className="mt-2">
                   <GitPullRequestCreateArrow className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
