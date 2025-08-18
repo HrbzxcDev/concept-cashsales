@@ -68,12 +68,21 @@ export async function getPercentageChangeTotalTransaction() {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
-    
-    // Format date in local timezone (YYYY-MM-DD)
-    const year = yesterday.getFullYear();
-    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
-    const day = String(yesterday.getDate()).padStart(2, '0');
-    const yesterdayString = `${year}-${month}-${day}`;
+
+    // Format date in local timezone (YYYY-MM-DD) - ensure we're using local time
+    // Use toLocaleDateString to ensure we get the correct local date
+    const yesterdayString = yesterday.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // YYYY-MM-DD format
+
+    // Debug logging to check the calculated date
+    console.log('Today:', today.toISOString());
+    console.log('Yesterday calculated:', yesterday.toISOString());
+    console.log('Yesterday string (local):', yesterdayString);
+    console.log(
+      'Today local:',
+      today.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+    );
 
     // Get total transactions count
     const totalResult = await db
