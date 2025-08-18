@@ -52,7 +52,7 @@ export default function Overview({
   };
 
   // Build compact sparkline data (daily counts for the last `days` days)
-  function getDailyCountsData(rows: any[], days = 12) {
+  function getDailyCountsData(rows: any[], days = 30) {
     const pad = (n: number) => String(n).padStart(2, '0');
     const toKey = (d: Date) =>
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -78,7 +78,7 @@ export default function Overview({
   }
 
   // Build a day-over-day percentage change series from daily counts
-  function getPercentageSeries(rows: any[], days = 12) {
+  function getPercentageSeries(rows: any[], days = 30) {
     const daily = getDailyCountsData(rows, days + 1); // need previous day to compute first change
     const series = [] as { date: string; value: number }[];
     for (let i = 1; i < daily.length; i += 1) {
@@ -91,7 +91,7 @@ export default function Overview({
   }
 
   // Flat line series for metrics that don't have historical data
-  function getFlatSeries(value: number, days = 12) {
+  function getFlatSeries(value: number, days = 30) {
     const base = getDailyCountsData([], days);
     return base.map((d) => ({ ...d, value }));
   }

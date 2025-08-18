@@ -117,7 +117,7 @@ export default function FetchActivity() {
           {activities.map((item) => {
             return (
               <li key={item.id} className="flex items-start gap-4">
-                <div className="mt-1">
+                <div className="mt-1 mt-2">
                   <GitPullRequestCreateArrow className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
@@ -130,7 +130,7 @@ export default function FetchActivity() {
                       </p>
                     </div>
                     <div className="mt-1 flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 mx-2 text-xs text-muted-foreground">
                         <Clock className="h-4 w-4" />
                         <span>
                           {formatDate(item.datefetched)} •{' '}
