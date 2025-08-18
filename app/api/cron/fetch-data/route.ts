@@ -7,7 +7,7 @@ import { cronService, CRON_SCHEDULES } from '@/lib/cron-service';
 //2nd Step
 async function fetchAndSaveData() {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
     const response = await fetch(
       //calling the function from /app/api/fetch-and-save
       `${baseUrl}/api/fetch-and-save?limit=100&upsert=true`,
