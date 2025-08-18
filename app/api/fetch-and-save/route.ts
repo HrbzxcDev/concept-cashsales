@@ -152,14 +152,15 @@ async function saveAPIFetchActivity(
 export async function GET(request: NextRequest) {
   const requestURL = new URL(request.url);
   const customDescription = requestURL.searchParams.get('description') || '';
-  try {
-    const { searchParams } = requestURL;
+  const { searchParams } = requestURL;
 
-    // Get query parameters
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const upsert = searchParams.get('upsert') === 'true';
-    const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
+  // Get query parameters
+  const limit = parseInt(searchParams.get('limit') || '100');
+  const upsert = searchParams.get('upsert') === 'true';
+  const dateFrom = searchParams.get('dateFrom');
+  const dateTo = searchParams.get('dateTo');
+  
+  try {
 
     // External API configuration
     const API_BASE_URL =
@@ -216,7 +217,7 @@ export async function GET(request: NextRequest) {
     }
 
     const apiData: ExternalAPICashSale[] = await response.json();
-    console.log(`Fetched ${apiData.length} records from external API`);
+    console.log(`Fetched ${apiData.length} Records From External API`);
     // console.log(
     //   'Raw API response sample:',
     //   JSON.stringify(apiData.slice(0, 2), null, 2)
@@ -233,7 +234,7 @@ export async function GET(request: NextRequest) {
               eq(apifetchedTable.datefetched, today),
               eq(
                 apifetchedTable.description,
-                'API Fetch Operation - No data Returned From External API'
+                'API Fetch Operation - No Data Returned From External API'
               )
             )
           )
@@ -241,9 +242,25 @@ export async function GET(request: NextRequest) {
 
         if (existingNoData.length === 0) {
           const baseNoDataDesc = 'API Fetch Operation - No Data Returned ';
-          const noDataDescription = customDescription
+          let noDataDescription = customDescription
             ? `${customDescription} - ${baseNoDataDesc}`
             : baseNoDataDesc;
+            
+          // Add date range to description if it's a manual fetch with date range
+          if (customDescription && dateFrom && dateTo) {
+            const formatDateForDisplay = (dateStr: string) => {
+              const date = new Date(dateStr);
+              return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            };
+            const fromDisplay = formatDateForDisplay(dateFrom);
+            const toDisplay = formatDateForDisplay(dateTo);
+            noDataDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseNoDataDesc}`;
+          }
+          
           await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
           console.log(
@@ -273,7 +290,6 @@ export async function GET(request: NextRequest) {
       // console.log('Item cashsalesid:', item?.cashsalesid);
       // console.log('Item cashsalesid type:', typeof item?.cashsalesid);
       // console.log('Item cashsalesid trimmed:', item?.cashsalesid?.trim());
-
       // Try different possible field names for cashsalesid
       const possibleIdFields = [
         'cashsalesid',
@@ -456,14 +472,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Save API fetch activity to database (avoid duplicate no-op logs per day)
-    try {
-      const baseDescription = `API Fetch Operation Successful - ${
-        upsert ? 'Upsert' : 'Insert only'
-      } Mode.`;
-      const activityDescription = customDescription
-        ? `${customDescription} - ${baseDescription}`
-        : baseDescription;
+          // Save API fetch activity to database (avoid duplicate no-op logs per day)
+      try {
+        const baseDescription = `API Fetch Operation Successful - ${
+          upsert ? 'Upsert' : 'Insert only'
+        } Mode.`;
+        
+        // Include date range in description for manual fetches
+        let activityDescription = customDescription
+          ? `${customDescription} - ${baseDescription}`
+          : baseDescription;
+          
+        // Add date range to description if it's a manual fetch with date range
+         if (customDescription && dateFrom && dateTo) {
+           const formatDateForDisplay = (dateStr: string) => {
+             const date = new Date(dateStr);
+             return date.toLocaleDateString('en-US', {
+               year: 'numeric',
+               month: 'short',
+               day: 'numeric'
+             });
+           };
+           const fromDisplay = formatDateForDisplay(dateFrom);
+           const toDisplay = formatDateForDisplay(dateTo);
+           activityDescription = `${baseDescription} - ${customDescription} (${fromDisplay} to ${toDisplay})`;
+         }
 
       // Save success activity when there are DB changes.
       // If a custom description is provided (manual fetch), always log the activity
@@ -586,9 +619,27 @@ export async function GET(request: NextRequest) {
       const baseFailDesc = `API Fetch Operation Failed - ${
         error instanceof Error ? error.message : 'Unknown error'
       }`;
-      const failDescription = customDescription
+      
+      // Include date range in description for manual fetches
+      let failDescription = customDescription
         ? `${customDescription} - ${baseFailDesc}`
         : baseFailDesc;
+        
+             // Add date range to description if it's a manual fetch with date range
+       if (customDescription && dateFrom && dateTo) {
+         const formatDateForDisplay = (dateStr: string) => {
+           const date = new Date(dateStr);
+           return date.toLocaleDateString('en-US', {
+             year: 'numeric',
+             month: 'short',
+             day: 'numeric'
+           });
+         };
+         const fromDisplay = formatDateForDisplay(dateFrom);
+         const toDisplay = formatDateForDisplay(dateTo);
+         failDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseFailDesc}`;
+       }
+      
       await saveAPIFetchActivity(failDescription, 0, false);
     } catch (activityError) {
       console.error(
