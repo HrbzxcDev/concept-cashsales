@@ -14,20 +14,86 @@ export async function GET(request: NextRequest) {
         ? `https://${process.env.VERCEL_URL}`
         : 'http://localhost:3000';
 
+    // Prepare comprehensive authentication headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Vercel-Cron-Job/1.0'
+    };
+
+    // Add API key if configured
+    const apiKey = process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY;
+    if (apiKey) {
+      headers['X-API-Key'] = apiKey;
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    // Add secret token if configured
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret) {
+      headers['X-Cron-Secret'] = cronSecret;
+    }
+
+    // Add session token if configured
+    const sessionToken = process.env.SESSION_TOKEN;
+    if (sessionToken) {
+      headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
+
+    // Add basic auth if configured
+    const basicAuthUsername = process.env.BASIC_AUTH_USERNAME;
+    const basicAuthPassword = process.env.BASIC_AUTH_PASSWORD;
+    if (basicAuthUsername && basicAuthPassword) {
+      const basicAuth = Buffer.from(
+        `${basicAuthUsername}:${basicAuthPassword}`
+      ).toString('base64');
+      headers['Authorization'] = `Basic ${basicAuth}`;
+    }
+
+    // Add custom auth header if configured
+    const customAuthHeader = process.env.CUSTOM_AUTH_HEADER;
+    const customAuthValue = process.env.CUSTOM_AUTH_VALUE;
+    if (customAuthHeader && customAuthValue) {
+      headers[customAuthHeader] = customAuthValue;
+    }
+
+    console.log('[CRON] Making request with headers:', Object.keys(headers));
+
     // Call the existing fetch-and-save endpoint
     const response = await fetch(
       `${baseUrl}/api/fetch-and-save?limit=100&upsert=true`,
       {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[CRON] Error calling fetch-and-save API:', errorText);
+
+      // Check if it's an authentication error
+      if (response.status === 401 || response.status === 403) {
+        console.error(
+          '[CRON] Authentication error - check authentication configuration'
+        );
+        throw new Error(
+          `Authentication error: ${response.status} - Check API_KEY, CRON_SECRET, or other auth variables`
+        );
+      }
+
+      // Check if it's an HTML response (likely a login page)
+      if (
+        errorText.includes('<!doctype html>') ||
+        errorText.includes('<html')
+      ) {
+        console.error(
+          '[CRON] Received HTML response instead of JSON - likely authentication redirect'
+        );
+        throw new Error(
+          'Received HTML response - API may be protected by authentication. Check authentication headers.'
+        );
+      }
+
       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
