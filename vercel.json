@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/fetch-and-save",
+      "path": "/scripts/init-cron.ts",
       "schedule": "30 0 * * *"
     }
   ]
