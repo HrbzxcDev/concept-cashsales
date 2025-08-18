@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/scripts/init-cron.ts",
-      "schedule": "30 0 * * *"
+      "path": "/api/cron/fetch-data",
+      "schedule": "0 20 * * *"
     }
   ]
 }
