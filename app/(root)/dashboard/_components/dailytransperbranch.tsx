@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { getDailyTransactionPerLocation } from '@/actions/getdata';
 import { MapPinHouse } from 'lucide-react';
 import {
+  Area,
   CartesianGrid,
+  AreaChart,
   Line,
   LineChart,
   XAxis,
@@ -150,15 +152,14 @@ export function ChartLineMultiple() {
           config={chartConfig}
           className="aspect-auto h-[200px] w-full pt-7"
         >
-          <LineChart
+          <AreaChart
             accessibilityLayer
             data={chartData}
             margin={{
-              left: 1
+              left: 1,
+              right: 1,
+              top: 1
             }}
-            // margin={{
-            //   left: 10
-            // }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
@@ -180,17 +181,36 @@ export function ChartLineMultiple() {
               tickFormatter={(value) => value.toLocaleString()}
             /> */}
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            {locations.map((location) => (
-              <Line
-                key={location}
-                dataKey={location}
-                type="monotone"
-                stroke={chartConfig[location]?.color}
-                strokeWidth={2}
-                dot={false}
-              />
-            ))}
-          </LineChart>
+              <defs>
+               {locations.map((location) => (
+                 <linearGradient key={location} id={`gradient-${location}`} x1="0" y1="0" x2="0" y2="1">
+                   <stop
+                     offset="5%"
+                     stopColor={chartConfig[location]?.color}
+                     stopOpacity={0.8}
+                   />
+                   <stop
+                     offset="95%"
+                     stopColor={chartConfig[location]?.color}
+                     stopOpacity={0.1}
+                   />
+                 </linearGradient>
+               ))}
+              </defs>
+                {locations.map((location) => (
+                  <Area
+                    key={location}
+                    dataKey={location}
+                    type="monotone"
+                    // fill={`url(#gradient-${location})`}
+                    fill={chartConfig[location]?.color}
+                    fillOpacity={0.1}
+                    stroke={chartConfig[location]?.color}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+              ))}
+          </AreaChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className="pt-1">
