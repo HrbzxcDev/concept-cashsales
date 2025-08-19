@@ -65,7 +65,7 @@ export default function AppSidebar({
   // const AppSidebar = async ({ children }: { children: ReactNode }) => {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
-  //* Only render after first client-side mount
+  // Only render after first client-side mount
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -83,7 +83,7 @@ export default function AppSidebar({
               <company.logo />
             </div>
             <div className="flex min-w-0 flex-col justify-center">
-              <span className="truncate text-lg font-semibold">
+              <span className="truncate text-base font-semibold">
                 {company.name}
               </span>
               <span className="truncate text-xs">{company.version}</span>
@@ -169,7 +169,7 @@ export default function AppSidebar({
                         hrbzxcdev@gmail.com
                       </span>
                     </div>
-                    <ChevronsUpDown className="ml-auto size-4" />
+                    {/* <ChevronsUpDown className="ml-auto size-4" /> */}
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 {/* <DropdownMenuContent
