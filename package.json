@@ -17,7 +17,16 @@
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
     "cron:start": "tsx scripts/init-cron.ts",
-    "cron:dev": "tsx watch scripts/init-cron.ts"
+    "cron:dev": "tsx watch scripts/init-cron.ts",
+    "fetch:manual": "node scripts/manage-fetch.js fetch",
+    "fetch:poll": "node scripts/manage-fetch.js poll",
+    "fetch:webhook": "node scripts/manage-fetch.js webhook",
+    "fetch:event": "node scripts/manage-fetch.js event",
+    "fetch:status": "node scripts/manage-fetch.js status",
+    "vercel:webhook": "node scripts/vercel-manage.js webhook",
+    "vercel:fetch": "node scripts/vercel-manage.js fetch",
+    "vercel:status": "node scripts/vercel-manage.js status",
+    "vercel:test": "node scripts/vercel-manage.js test"
   },
   "lint-staged": {
     "**/*": [
@@ -81,7 +90,8 @@
     "tailwind-merge": "^1.14.0",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
