@@ -62,6 +62,9 @@ export async function getTransactionCountPerLocation() {
   }
 }
 
+
+
+
 export async function getPercentageChangeTotalTransaction() {
   try {
     // Get yesterday's date in local timezone to avoid UTC issues
@@ -76,13 +79,13 @@ export async function getPercentageChangeTotalTransaction() {
     }); // YYYY-MM-DD format
 
     // Debug logging to check the calculated date
-    console.log('Today:', today.toISOString());
-    console.log('Yesterday calculated:', yesterday.toISOString());
-    console.log('Yesterday string (local):', yesterdayString);
-    console.log(
-      'Today local:',
-      today.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
-    );
+    // console.log('Today:', today.toISOString());
+    // console.log('Yesterday calculated:', yesterday.toISOString());
+    // console.log('Yesterday string (local):', yesterdayString);
+    // console.log(
+    //   'Today local:',
+    //   today.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+    // );
 
     // Get total transactions count
     const totalResult = await db
@@ -143,7 +146,7 @@ export async function getDailyTransactionPerLocation() {
 }
 
 // Recent API fetch activities from tblapifetched
-export async function getRecentApiFetches(limit: number = 10) {
+export async function getRecentApiFetches(limit: number = 0) {
   try {
     const baseQuery = db
       .select({

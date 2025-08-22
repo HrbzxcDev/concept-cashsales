@@ -7,8 +7,11 @@ import ThemeProvider from '@/components/layout/ThemeToggle/theme-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Savings and Lending Apps',
-  description: 'Dashboard for Savings and Lending Apps'
+  title: 'Concept CashSales',
+  description: 'Dashboard for Concept CashSales',
+  icons: {
+    icon: '/Logo.ico',
+  },
 };
 
 const montserrat = Montserrat({

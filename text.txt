@@ -1,0 +1,5 @@
+https://motion.dev/docs/react-use-velocity
+
+https://lucide.dev/
+
+https://www.shadcn.io/components

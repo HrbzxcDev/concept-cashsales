@@ -8,6 +8,7 @@ import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getRecentApiFetches } from '@/actions/getdata';
+import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
 import {
   CheckCircle2,
   XCircle,
@@ -55,16 +56,26 @@ export default function FetchActivity() {
   const [manualOpen, setManualOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: new Date(), to: new Date() });
+  const { refreshTrigger } = useAutoFetch();
+
+  const loadActivities = async () => {
+    setLoading(true);
+    const rows = await getRecentApiFetches();
+    setActivities(rows as ActivityItem[]);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const rows = await getRecentApiFetches();
-      setActivities(rows as ActivityItem[]);
-      setLoading(false);
-    };
-    load();
+    loadActivities();
   }, []);
+
+  // Refresh activities when auto-fetch triggers a refresh
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('🔄 Auto-fetch triggered fetch activity refresh');
+      loadActivities();
+    }
+  }, [refreshTrigger]);
 
   const handleManualFetch = async () => {
     if (!dateRange?.from) return;
