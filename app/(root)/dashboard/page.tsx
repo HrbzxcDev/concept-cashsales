@@ -1,10 +1,4 @@
-import OverViewPage from './_components/overview';
-import {
-  gettotaltrans,
-  gettotalbranch,
-  getCashsalesData,
-  getPercentageChangeTotalTransaction
-} from '@/actions/getdata';
+import DashboardWrapper from './_components/dashboard-wrapper';
 
 export const metadata = {
   title: 'Dashboard : Overview'
@@ -13,22 +7,6 @@ export const metadata = {
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';
 
-export default async function Page() {
-  // Fetch all data server-side
-  const [totalTransactions, totalBranch, cashsalesData, percentageChangeData] =
-    await Promise.all([
-      gettotaltrans(),
-      gettotalbranch(),
-      getCashsalesData(),
-      getPercentageChangeTotalTransaction()
-    ]);
-
-  return (
-    <OverViewPage
-      totalTransactions={totalTransactions}
-      totalBranch={totalBranch}
-      cashsalesData={cashsalesData}
-      percentageChangeData={percentageChangeData}
-    />
-  );
+export default function Page() {
+  return <DashboardWrapper />;
 }
