@@ -354,33 +354,6 @@ export function DataTable<TData, TValue>({
           />
         </div>
 
-        <div className="w-full min-w-0">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={
-                filterType === 'all'
-                  ? 'Search CashSales Code or Stock Location...'
-                  : filterType === 'cashsalescode'
-                  ? 'Search CashSales Code...'
-                  : 'Search Stock Location...'
-              }
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              className="h-10 w-full pl-9 pr-9 placeholder:text-sm"
-            />
-            {searchValue && (
-              <button
-                onClick={() => setSearchValue('')}
-                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
         <div className="w-full min-w-0" ref={filterDropdownRef}>
           <div className="relative">
             <button
@@ -446,6 +419,32 @@ export function DataTable<TData, TValue>({
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+        <div className="w-full min-w-0">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={
+                filterType === 'all'
+                  ? 'CashSalesCode or Stock Location...'
+                  : filterType === 'cashsalescode'
+                  ? 'Search CashSales Code...'
+                  : 'Search Stock Location...'
+              }
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              className="h-10 w-full pl-9 pr-9 placeholder:text-sm"
+            />
+            {searchValue && (
+              <button
+                onClick={() => setSearchValue('')}
+                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
           </div>
         </div>
