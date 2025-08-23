@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
+import {
+  cashsalesTable,
+  apiactivityTable,
+  cashsalesdetailsTable
+} from '@/utils/db/schema';
 import { eq, and } from 'drizzle-orm';
+import {
+  fetchCashSaleDetailByCode,
+  fetchAndSaveCashSalesDetails
+} from '@/actions/fetchapi';
 
 // Types
 interface ExternalAPICashSale {
@@ -20,6 +28,13 @@ interface FetchAndSaveResponse {
   updatedCount?: number;
   errors?: string[];
   data?: any[];
+  detailsResult?: {
+    success: boolean;
+    message: string;
+    savedCount?: number;
+    updatedCount?: number;
+    errors?: string[];
+  } | null;
 }
 
 /**
@@ -113,12 +128,16 @@ async function saveAPIFetchActivity(
 ) {
   try {
     const now = new Date();
-    const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
-    const currentTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Manila' }).split(' ')[0]; // HH:MM:SS format in Philippine timezone
+    const currentDate = now.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // YYYY-MM-DD format in Philippine timezone
+    const currentTime = now
+      .toLocaleTimeString('en-GB', { timeZone: 'Asia/Manila' })
+      .split(' ')[0]; // HH:MM:SS format in Philippine timezone
 
     // Create activity record
     const activityRecord = await db
-      .insert(apifetchedTable)
+      .insert(apiactivityTable)
       .values({
         description: description,
         count: count.toString(),
@@ -155,43 +174,54 @@ export async function GET(request: NextRequest) {
   const { searchParams } = requestURL;
 
   // Get query parameters
-  const limit = parseInt(searchParams.get('limit') || '100');
+  const limit = parseInt(searchParams.get('limit') || '1000');
   const upsert = searchParams.get('upsert') === 'true';
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
-  
-  try {
+  const fetchDetails = searchParams.get('fetchDetails') === 'true';
+  const detailsLimit = parseInt(searchParams.get('detailsLimit') || '50');
+  const detailsBatchSize = parseInt(
+    searchParams.get('detailsBatchSize') || '10'
+  );
 
+  try {
     // External API configuration
     const API_BASE_URL =
       process.env.NEXT_PUBLIC_API_BASE_URL ||
       'https://api.qne.cloud/api/CashSales';
     const DB_CODE = process.env.NEXT_PUBLIC_DB_CODE || '';
 
-    console.log('Starting fetch and save operation...');
-    console.log('API URL:', API_BASE_URL);
-    console.log('Limit:', limit);
-    console.log('Upsert:', upsert);
-
     // Get today's date in YYYY-MM-DD format (Philippine timezone)
     const now = new Date();
     const today = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
     const yesterdayDate = new Date(now);
     yesterdayDate.setDate(now.getDate() - 1);
-    const yesterday = yesterdayDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // YYYY-MM-DD format in Philippine timezone
 
     // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
 
     // Add OData parameters
     queryParams.append('$skip', '0');
-    queryParams.append('$top', limit > 0 ? limit.toString() : '100');
+    queryParams.append('$top', limit > 0 ? limit.toString() : '1000');
     // Use provided date range if available, otherwise default to [yesterday, today)
     const fromDate = dateFrom || yesterday;
     const toDate = dateTo || today;
+
+    console.log('Starting fetch and save operation...');
+    console.log('API URL:', API_BASE_URL);
+    console.log('DB CODE:', DB_CODE);
+    console.log('Limit:', limit);
+    console.log('Upsert:', upsert);
+    console.log('Date From:', fromDate);
+    console.log('Date To:', toDate);
+    console.log('Fetch Details:', fetchDetails);
     queryParams.append(
       '$filter',
-      `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
+      // `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
+      `cashsalesdate ge 2025-08-20 and cashsalesdate le 2025-08-21`
     );
 
     // Construct the full URL
@@ -227,13 +257,13 @@ export async function GET(request: NextRequest) {
       // Save activity for empty response, but avoid duplicates for the same date
       try {
         const existingNoData = await db
-          .select({ id: apifetchedTable.id })
-          .from(apifetchedTable)
+          .select({ id: apiactivityTable.id })
+          .from(apiactivityTable)
           .where(
             and(
-              eq(apifetchedTable.datefetched, today),
+              eq(apiactivityTable.datefetched, today),
               eq(
-                apifetchedTable.description,
+                apiactivityTable.description,
                 'API Fetch Operation - No Data Returned From External API'
               )
             )
@@ -245,7 +275,7 @@ export async function GET(request: NextRequest) {
           let noDataDescription = customDescription
             ? `${customDescription} - ${baseNoDataDesc}`
             : baseNoDataDesc;
-            
+
           // Add date range to description if it's a manual fetch with date range
           if (customDescription && dateFrom && dateTo) {
             const formatDateForDisplay = (dateStr: string) => {
@@ -260,7 +290,7 @@ export async function GET(request: NextRequest) {
             const toDisplay = formatDateForDisplay(dateTo);
             noDataDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseNoDataDesc}`;
           }
-          
+
           await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
           console.log(
@@ -397,7 +427,9 @@ export async function GET(request: NextRequest) {
             // Update existing record only if there are actual changes
             const current = existingRecord[0] as any;
             const currentDate = current?.cashsalesdate
-              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA', {
+                  timeZone: 'Asia/Manila'
+                })
               : '';
             const hasChanges =
               currentDate !== transformedData.cashsalesdate ||
@@ -472,31 +504,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-          // Save API fetch activity to database (avoid duplicate no-op logs per day)
-      try {
-        const baseDescription = `API Fetch Operation Successful - ${
-          upsert ? 'Upsert' : 'Insert only'
-        } Mode.`;
-        
-        // Include date range in description for manual fetches
-        let activityDescription = customDescription
-          ? `${customDescription} - ${baseDescription}`
-          : baseDescription;
-          
-        // Add date range to description if it's a manual fetch with date range
-         if (customDescription && dateFrom && dateTo) {
-           const formatDateForDisplay = (dateStr: string) => {
-             const date = new Date(dateStr);
-             return date.toLocaleDateString('en-US', {
-               year: 'numeric',
-               month: 'short',
-               day: 'numeric'
-             });
-           };
-           const fromDisplay = formatDateForDisplay(dateFrom);
-           const toDisplay = formatDateForDisplay(dateTo);
-           activityDescription = `${baseDescription} - ${customDescription} (${fromDisplay} to ${toDisplay})`;
-         }
+    // Save API fetch activity to database (avoid duplicate no-op logs per day)
+    try {
+      const baseDescription = `API Fetch Operation Successful - ${
+        upsert ? 'Upsert' : 'Insert only'
+      } Mode.`;
+
+      // Include date range in description for manual fetches
+      let activityDescription = customDescription
+        ? `${customDescription} - ${baseDescription}`
+        : baseDescription;
+
+      // Add date range to description if it's a manual fetch with date range
+      if (customDescription && dateFrom && dateTo) {
+        const formatDateForDisplay = (dateStr: string) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+        };
+        const fromDisplay = formatDateForDisplay(dateFrom);
+        const toDisplay = formatDateForDisplay(dateTo);
+        activityDescription = `${baseDescription} - ${customDescription} (${fromDisplay} to ${toDisplay})`;
+      }
 
       // Save success activity when there are DB changes.
       // If a custom description is provided (manual fetch), always log the activity
@@ -592,16 +624,66 @@ export async function GET(request: NextRequest) {
       // Do not interrupt the main flow
     }
 
+    // Fetch and save cash sales details if requested
+    let detailsResult = null;
+    if (fetchDetails) {
+      try {
+        console.log('Starting cash sales details fetch operation...');
+
+        detailsResult = await fetchAndSaveCashSalesDetails({
+          upsert: upsert,
+          batchSize: detailsBatchSize,
+          limit: detailsLimit
+        });
+
+        // Save activity for details fetch
+        if (detailsResult.success) {
+          const detailsDescription = `Cash Sales Details Fetch - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
+          await saveAPIFetchActivity(
+            detailsDescription,
+            (detailsResult.savedCount || 0) + (detailsResult.updatedCount || 0),
+            true
+          );
+        } else {
+          await saveAPIFetchActivity(
+            'Cash Sales Details Fetch Failed',
+            0,
+            false
+          );
+        }
+
+        console.log(
+          'Cash sales details operation completed:',
+          detailsResult.message
+        );
+      } catch (detailsError) {
+        console.error('Error in cash sales details fetch:', detailsError);
+        detailsResult = {
+          success: false,
+          message:
+            detailsError instanceof Error
+              ? detailsError.message
+              : 'Unknown error occurred',
+          savedCount: 0,
+          updatedCount: 0
+        };
+
+        // Save activity for failed details fetch
+        await saveAPIFetchActivity('Cash Sales Details Fetch Failed', 0, false);
+      }
+    }
+
     const responseData: FetchAndSaveResponse = {
       success: errors.length === 0,
       message: `Successfully Processed ${validRecords.length} Valid Records (${
         apiData.length - validRecords.length
       } Invalid Skipped). Saved: ${savedCount}, Updated: ${updatedCount}${
         errors.length > 0 ? `, Errors: ${errors.length}` : ''
-      }`,
+      }${detailsResult ? ` | Details: ${detailsResult.message}` : ''}`,
       savedCount,
       updatedCount,
-      data: savedData
+      data: savedData,
+      detailsResult: detailsResult
     };
 
     if (errors.length > 0) {
@@ -619,27 +701,27 @@ export async function GET(request: NextRequest) {
       const baseFailDesc = `API Fetch Operation Failed - ${
         error instanceof Error ? error.message : 'Unknown error'
       }`;
-      
+
       // Include date range in description for manual fetches
       let failDescription = customDescription
         ? `${customDescription} - ${baseFailDesc}`
         : baseFailDesc;
-        
-             // Add date range to description if it's a manual fetch with date range
-       if (customDescription && dateFrom && dateTo) {
-         const formatDateForDisplay = (dateStr: string) => {
-           const date = new Date(dateStr);
-           return date.toLocaleDateString('en-US', {
-             year: 'numeric',
-             month: 'short',
-             day: 'numeric'
-           });
-         };
-         const fromDisplay = formatDateForDisplay(dateFrom);
-         const toDisplay = formatDateForDisplay(dateTo);
-         failDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseFailDesc}`;
-       }
-      
+
+      // Add date range to description if it's a manual fetch with date range
+      if (customDescription && dateFrom && dateTo) {
+        const formatDateForDisplay = (dateStr: string) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+        };
+        const fromDisplay = formatDateForDisplay(dateFrom);
+        const toDisplay = formatDateForDisplay(dateTo);
+        failDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseFailDesc}`;
+      }
+
       await saveAPIFetchActivity(failDescription, 0, false);
     } catch (activityError) {
       console.error(

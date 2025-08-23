@@ -1,5 +1,5 @@
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable } from '@/utils/db/schema';
+import { cashsalesTable, cashsalesdetailsTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
 
 const API_BASE_URL =
@@ -603,4 +603,231 @@ export async function fetchCashSalesToday(
 }> {
   const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
   return fetchCashSalesByDate(today, options);
+}
+
+/**
+ * Transforms API cash sale detail line to database format
+ */
+function transformDetailLineToDB(
+  detailLine: CashSaleDetailLine,
+  cashsalescode: string,
+  cashsalesdate: string
+): Omit<
+  typeof cashsalesdetailsTable.$inferInsert,
+  'id' | 'createdAt' | 'updatedAt'
+> {
+  return {
+    stockid: detailLine.id || '',
+    cashsalescode: cashsalescode,
+    cashsalesdate: cashsalesdate,
+    numbering: detailLine.numbering || '',
+    stockcode: detailLine.stock || '',
+    description: detailLine.description || '',
+    quantity: detailLine.qty || 0,
+    uom: detailLine.uom || '',
+    unitprice: detailLine.unitPrice || 0,
+    discount:
+      typeof detailLine.discount === 'string'
+        ? parseFloat(detailLine.discount) || 0
+        : detailLine.discount || 0,
+    amount: detailLine.amount || 0,
+    taxcode: detailLine.taxCode || '',
+    taxamount: detailLine.taxAmount || 0,
+    netamount: detailLine.netAmount || 0,
+    glaccount: detailLine.glAccount || '',
+    stocklocation: detailLine.stockLocation || '',
+    costcentre: detailLine.costCentre || '',
+    project: detailLine.project || '',
+    serialnumber: detailLine.serialNumber || '',
+    status: true
+  } as any; // Type assertion to handle numeric field types
+}
+
+/**
+ * Fetches and saves cash sales details for all cash sales codes in the database
+ */
+export async function fetchAndSaveCashSalesDetails(
+  options: {
+    upsert?: boolean;
+    batchSize?: number;
+    limit?: number;
+  } = {}
+): Promise<FetchAndSaveResponse> {
+  const { upsert = false, batchSize = 10, limit } = options;
+
+  try {
+    console.log('Starting fetch and save cash sales details operation...');
+
+    // Get all cash sales codes from the database
+    const cashSalesQuery = db
+      .select({
+        cashsalescode: cashsalesTable.cashsalescode,
+        cashsalesdate: cashsalesTable.cashsalesdate
+      })
+      .from(cashsalesTable)
+      .orderBy(cashsalesTable.cashsalescode);
+
+    const cashSales = limit
+      ? await cashSalesQuery.limit(limit)
+      : await cashSalesQuery;
+
+    console.log(`Found ${cashSales.length} cash sales codes to process`);
+
+    if (cashSales.length === 0) {
+      return {
+        success: true,
+        message: 'No cash sales codes found in database',
+        savedCount: 0,
+        updatedCount: 0
+      };
+    }
+
+    let savedCount = 0;
+    let updatedCount = 0;
+    const errors: string[] = [];
+
+    // Process cash sales codes in batches
+    for (let i = 0; i < cashSales.length; i += batchSize) {
+      const batch = cashSales.slice(i, i + batchSize);
+      console.log(
+        `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+          cashSales.length / batchSize
+        )}`
+      );
+
+      // Process each cash sales code in the batch
+      for (const cashSale of batch) {
+        try {
+          console.log(
+            `Fetching details for cash sales code: ${cashSale.cashsalescode}`
+          );
+
+          // Fetch details from API
+          const detailResponse = await fetchCashSaleDetailByCode(
+            cashSale.cashsalescode
+          );
+
+          if (!detailResponse.details || detailResponse.details.length === 0) {
+            console.log(
+              `No details found for cash sales code: ${cashSale.cashsalescode}`
+            );
+            continue;
+          }
+
+          // Process each detail line
+          for (const detailLine of detailResponse.details) {
+            try {
+              const transformedData = transformDetailLineToDB(
+                detailLine,
+                cashSale.cashsalescode,
+                cashSale.cashsalesdate
+              );
+
+              if (upsert) {
+                // Check if record exists (using stockid and cashsalescode as unique identifier)
+                const existingRecord = await db
+                  .select()
+                  .from(cashsalesdetailsTable)
+                  .where(
+                    eq(
+                      cashsalesdetailsTable.stockid,
+                      transformedData.stockid
+                    ) &&
+                      eq(
+                        cashsalesdetailsTable.cashsalescode,
+                        transformedData.cashsalescode
+                      )
+                  )
+                  .limit(1);
+
+                if (existingRecord.length > 0) {
+                  // Update existing record
+                  await db
+                    .update(cashsalesdetailsTable)
+                    .set(transformedData)
+                    .where(
+                      eq(
+                        cashsalesdetailsTable.stockid,
+                        transformedData.stockid
+                      ) &&
+                        eq(
+                          cashsalesdetailsTable.cashsalescode,
+                          transformedData.cashsalescode
+                        )
+                    );
+                  updatedCount++;
+                } else {
+                  // Insert new record
+                  await db
+                    .insert(cashsalesdetailsTable)
+                    .values(transformedData);
+                  savedCount++;
+                }
+              } else {
+                // Only insert if record doesn't exist
+                const existingRecord = await db
+                  .select()
+                  .from(cashsalesdetailsTable)
+                  .where(
+                    eq(
+                      cashsalesdetailsTable.stockid,
+                      transformedData.stockid
+                    ) &&
+                      eq(
+                        cashsalesdetailsTable.cashsalescode,
+                        transformedData.cashsalescode
+                      )
+                  )
+                  .limit(1);
+
+                if (existingRecord.length === 0) {
+                  await db
+                    .insert(cashsalesdetailsTable)
+                    .values(transformedData);
+                  savedCount++;
+                }
+              }
+            } catch (error) {
+              const errorMessage = `Error processing detail line for cash sales code ${
+                cashSale.cashsalescode
+              }: ${error instanceof Error ? error.message : 'Unknown Error'}`;
+              console.error(errorMessage);
+              errors.push(errorMessage);
+            }
+          }
+
+          // Add a small delay to avoid overwhelming the API
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } catch (error) {
+          const errorMessage = `Error fetching details for cash sales code ${
+            cashSale.cashsalescode
+          }: ${error instanceof Error ? error.message : 'Unknown Error'}`;
+          console.error(errorMessage);
+          errors.push(errorMessage);
+        }
+      }
+    }
+
+    const message = `Successfully processed ${
+      cashSales.length
+    } cash sales codes. Saved: ${savedCount}, Updated: ${updatedCount}${
+      errors.length > 0 ? `, Errors: ${errors.length}` : ''
+    }`;
+
+    return {
+      success: true,
+      message,
+      savedCount,
+      updatedCount,
+      errors: errors.length > 0 ? errors : undefined
+    };
+  } catch (error) {
+    console.error('Error in fetchAndSaveCashSalesDetails:', error);
+
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : 'An unknown error occurred'
+    };
+  }
 }

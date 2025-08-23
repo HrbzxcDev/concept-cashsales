@@ -1,7 +1,11 @@
 'use server';
 
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
+import {
+  cashsalesTable,
+  apiactivityTable,
+  cashsalesdetailsTable
+} from '@/utils/db/schema';
 import { count, desc, sql, asc, eq } from 'drizzle-orm';
 
 export async function gettotaltrans() {
@@ -61,9 +65,6 @@ export async function getTransactionCountPerLocation() {
     return [];
   }
 }
-
-
-
 
 export async function getPercentageChangeTotalTransaction() {
   try {
@@ -145,21 +146,21 @@ export async function getDailyTransactionPerLocation() {
   }
 }
 
-// Recent API fetch activities from tblapifetched
+// Recent API fetch activities from tblapiactivity
 export async function getRecentApiFetches(limit: number = 0) {
   try {
     const baseQuery = db
       .select({
-        id: apifetchedTable.id,
-        description: apifetchedTable.description,
-        count: apifetchedTable.count,
-        datefetched: apifetchedTable.datefetched,
-        timefetched: apifetchedTable.timefetched,
-        status: apifetchedTable.status,
-        createdAt: apifetchedTable.createdAt
+        id: apiactivityTable.id,
+        description: apiactivityTable.description,
+        count: apiactivityTable.count,
+        datefetched: apiactivityTable.datefetched,
+        timefetched: apiactivityTable.timefetched,
+        status: apiactivityTable.status,
+        createdAt: apiactivityTable.createdAt
       })
-      .from(apifetchedTable)
-      .orderBy(desc(apifetchedTable.createdAt));
+      .from(apiactivityTable)
+      .orderBy(desc(apiactivityTable.createdAt));
 
     // If limit is -1 or 0, return all data without limit
     const result =
@@ -174,6 +175,55 @@ export async function getRecentApiFetches(limit: number = 0) {
     }));
   } catch (error) {
     // console.error('Error getting recent API fetches:', error);
+    return [];
+  }
+}
+
+// Get cash sales details by cash sales code
+export async function getCashSalesDetailsByCode(cashsalescode: string) {
+  try {
+    const result = await db
+      .select({
+        id: cashsalesdetailsTable.id,
+        stockid: cashsalesdetailsTable.stockid,
+        cashsalescode: cashsalesdetailsTable.cashsalescode,
+        cashsalesdate: cashsalesdetailsTable.cashsalesdate,
+        numbering: cashsalesdetailsTable.numbering,
+        stockcode: cashsalesdetailsTable.stockcode,
+        description: cashsalesdetailsTable.description,
+        quantity: cashsalesdetailsTable.quantity,
+        uom: cashsalesdetailsTable.uom,
+        unitprice: cashsalesdetailsTable.unitprice,
+        discount: cashsalesdetailsTable.discount,
+        amount: cashsalesdetailsTable.amount,
+        taxcode: cashsalesdetailsTable.taxcode,
+        taxamount: cashsalesdetailsTable.taxamount,
+        netamount: cashsalesdetailsTable.netamount,
+        glaccount: cashsalesdetailsTable.glaccount,
+        stocklocation: cashsalesdetailsTable.stocklocation,
+        costcentre: cashsalesdetailsTable.costcentre,
+        project: cashsalesdetailsTable.project,
+        serialnumber: cashsalesdetailsTable.serialnumber,
+        status: cashsalesdetailsTable.status,
+        createdAt: cashsalesdetailsTable.createdAt,
+        updatedAt: cashsalesdetailsTable.updatedAt
+      })
+      .from(cashsalesdetailsTable)
+      .where(eq(cashsalesdetailsTable.cashsalescode, cashsalescode))
+      .orderBy(asc(cashsalesdetailsTable.numbering));
+
+    // Ensure numeric values are returned as numbers
+    return result.map((row) => ({
+      ...row,
+      quantity: Number(row.quantity),
+      unitprice: Number(row.unitprice),
+      discount: Number(row.discount),
+      amount: Number(row.amount),
+      taxamount: Number(row.taxamount),
+      netamount: Number(row.netamount)
+    }));
+  } catch (error) {
+    // console.error('Error getting cash sales details by code:', error);
     return [];
   }
 }

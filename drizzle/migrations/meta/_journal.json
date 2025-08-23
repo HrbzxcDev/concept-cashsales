@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1754670127389,
-      "tag": "0000_nice_dreaming_celestial",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1754719537301,
-      "tag": "0001_curly_killer_shrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1754719583627,
-      "tag": "0002_minor_tinkerer",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1754921976199,
-      "tag": "0003_young_gwen_stacy",
+      "when": 1755879015642,
+      "tag": "0000_normal_logan",
       "breakpoints": true
     }
   ]
