@@ -3,11 +3,9 @@ import { db } from '@/utils/db/drizzle';
 import {
   cashsalesTable,
   apiactivityTable,
-  cashsalesdetailsTable
 } from '@/utils/db/schema';
 import { eq, and } from 'drizzle-orm';
 import {
-  fetchCashSaleDetailByCode,
   fetchAndSaveCashSalesDetails
 } from '@/actions/fetchapi';
 
@@ -178,10 +176,11 @@ export async function GET(request: NextRequest) {
   const upsert = searchParams.get('upsert') === 'true';
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
-  const fetchDetails = searchParams.get('fetchDetails') === 'true';
-  const detailsLimit = parseInt(searchParams.get('detailsLimit') || '50');
+  const fetchDetails = searchParams.get('fetchDetails') !== 'false'; // Default to true unless explicitly set to false
+  const autoFetchDetails = searchParams.get('autoFetchDetails') !== 'false'; // Default to true unless explicitly set to false
+  const detailsLimit = parseInt(searchParams.get('detailsLimit') || '100');
   const detailsBatchSize = parseInt(
-    searchParams.get('detailsBatchSize') || '10'
+    searchParams.get('detailsBatchSize') || '100'
   );
 
   try {
@@ -218,10 +217,10 @@ export async function GET(request: NextRequest) {
     console.log('Date From:', fromDate);
     console.log('Date To:', toDate);
     console.log('Fetch Details:', fetchDetails);
+    console.log('Auto Fetch Details:', autoFetchDetails);
     queryParams.append(
       '$filter',
-      // `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
-      `cashsalesdate ge 2025-08-20 and cashsalesdate le 2025-08-21`
+      `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
     );
 
     // Construct the full URL
@@ -626,19 +625,36 @@ export async function GET(request: NextRequest) {
 
     // Fetch and save cash sales details if requested
     let detailsResult = null;
-    if (fetchDetails) {
-      try {
-        console.log('Starting cash sales details fetch operation...');
+    if (fetchDetails || autoFetchDetails) {
+             try {
+           console.log('Starting cash sales details fetch operation...');
 
-        detailsResult = await fetchAndSaveCashSalesDetails({
-          upsert: upsert,
-          batchSize: detailsBatchSize,
-          limit: detailsLimit
-        });
+           // Use date-based fetching for details, similar to how cash sales are fetched
+           const fromDate = dateFrom || yesterday;
+           const toDate = dateTo || today;
+
+           // Log whether we're using manual dates or default dates
+           if (dateFrom && dateTo) {
+             console.log(`Using MANUAL date range for details: ${fromDate} to ${toDate}`);
+           } else {
+             console.log(`Using DEFAULT date range for details: ${fromDate} to ${toDate}`);
+           }
+
+                   detailsResult = await fetchAndSaveCashSalesDetails(
+          fromDate,
+          toDate,
+          {
+            upsert: upsert,
+            batchSize: detailsBatchSize,
+            limit: detailsLimit
+          }
+        );
+
+           console.log('Cash sales details fetch operation completed:', detailsResult);
 
         // Save activity for details fetch
         if (detailsResult.success) {
-          const detailsDescription = `Cash Sales Details Fetch - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
+          const detailsDescription = `Cash Sales Details Fetch (${fromDate} to ${toDate}) - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
           await saveAPIFetchActivity(
             detailsDescription,
             (detailsResult.savedCount || 0) + (detailsResult.updatedCount || 0),
