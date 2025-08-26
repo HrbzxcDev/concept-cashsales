@@ -3,3 +3,6 @@ https://motion.dev/docs/react-use-velocity
 https://lucide.dev/
 
 https://www.shadcn.io/components
+
+
+https://jdel.com.ph:100/browse_report_gen_logs

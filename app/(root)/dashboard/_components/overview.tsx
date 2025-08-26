@@ -13,7 +13,7 @@ import {
 import { DataTable } from '@/app/(root)/cashsales-table/_components/cashsales-tables/data-table';
 import { Cashsalescolumns } from '@/app/(root)/cashsales-table/_components/cashsales-tables/columns';
 import { TransPerLocation } from './transperlocation';
-import { ChartLineMultiple } from './dailytransperbranch';
+import { DailyTransPerLocation } from './dailytransperlocation';
 import { SalesSummary } from './salesummary';
 import FetchActivity from './fetchactivity';
 import { Sparkline } from '@/components/ui/sparkline';
@@ -25,6 +25,7 @@ interface OverviewProps {
   totalNetAmount: number;
   totalDiscount: number;
   monthlySalesAndDiscountData: any[];
+  weeklySalesAndDiscountData: any[];
   cashsalesData: any[];
   cashsalesDetailsData: any[];
   percentageChangeData: {
@@ -48,6 +49,7 @@ export default function Overview({
   totalNetAmount,
   totalDiscount,
   monthlySalesAndDiscountData,
+  weeklySalesAndDiscountData,
   cashsalesData,
   cashsalesDetailsData,
   percentageChangeData,
@@ -363,6 +365,7 @@ export default function Overview({
               netSalesChange={24.5}
               discountChange={-5.5}
               monthlyData={monthlySalesAndDiscountData}
+              weeklyData={weeklySalesAndDiscountData}
             />
           </div>
         </div>
@@ -372,7 +375,7 @@ export default function Overview({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div>
-              <ChartLineMultiple />
+              <DailyTransPerLocation />
             </div>
           </div>
           <div className="lg:col-span-1">

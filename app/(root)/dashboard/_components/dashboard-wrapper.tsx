@@ -13,7 +13,8 @@ import {
   getPercentageChangeTotalItemsQuantity,
   getTotalNetAmount,
   getTotalDiscount,
-  getMonthlySalesAndDiscountData
+  getMonthlySalesAndDiscountData,
+  getWeeklySalesAndDiscountData
 } from '@/actions/getdata';
 
 interface DashboardData {
@@ -23,6 +24,7 @@ interface DashboardData {
   totalNetAmount: number;
   totalDiscount: number;
   monthlySalesAndDiscountData: any[];
+  weeklySalesAndDiscountData: any[];
   cashsalesData: any[];
   cashsalesDetailsData: any[];
   percentageChangeData: {
@@ -56,6 +58,7 @@ export default function DashboardWrapper() {
         totalNetAmount,
         totalDiscount,
         monthlySalesAndDiscountData,
+        weeklySalesAndDiscountData,
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
@@ -67,6 +70,7 @@ export default function DashboardWrapper() {
         getTotalNetAmount(),
         getTotalDiscount(),
         getMonthlySalesAndDiscountData(),
+        getWeeklySalesAndDiscountData(),
         getCashsalesData(),
         getCashsalesDetailsData(),
         getPercentageChangeTotalTransaction(),
@@ -80,6 +84,7 @@ export default function DashboardWrapper() {
         totalNetAmount,
         totalDiscount,
         monthlySalesAndDiscountData,
+        weeklySalesAndDiscountData,
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
@@ -142,6 +147,7 @@ export default function DashboardWrapper() {
           totalNetAmount={data.totalNetAmount}
           totalDiscount={data.totalDiscount}
           monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
+          weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
           cashsalesData={data.cashsalesData}
           cashsalesDetailsData={data.cashsalesDetailsData}
           percentageChangeData={data.percentageChangeData}
@@ -171,6 +177,7 @@ export default function DashboardWrapper() {
       totalNetAmount={data.totalNetAmount}
       totalDiscount={data.totalDiscount}
       monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
+      weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
       cashsalesData={data.cashsalesData}
       cashsalesDetailsData={data.cashsalesDetailsData}
       percentageChangeData={data.percentageChangeData}

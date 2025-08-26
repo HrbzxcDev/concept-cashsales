@@ -20,39 +20,66 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
-// interface SalesSummaryProps {
-//   netSales?: number;
-//   discount?: number; // This is actually discount amount
-//   netSalesChange?: number;
-//   discountChange?: number;
-//   monthlyData?: any[];
-// }
+// Segmented Control Component
+function SegmentedControl({
+  options,
+  value,
+  onChange
+}: {
+  options: { label: string; value: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex rounded-lg border bg-zinc-200 dark:bg-zinc-800 p-1">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={`relative flex-1 rounded-md px-2 py-1 text-xs font-medium transition-all duration-200 ${
+            value === option.value
+              ? 'bg-gray-700 text-white shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-500'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function SalesSummary({
   netSales,
   discount,
   netSalesChange,
   discountChange,
-  monthlyData
+  monthlyData,
+  weeklyData
 }: {
   netSales?: number;
   discount?: number;
   netSalesChange?: number;
   discountChange?: number;
   monthlyData?: any[];
+  weeklyData?: any[];
 }) {  
-  const chartData =
-    monthlyData && monthlyData?.length > 0
-      ? monthlyData
-      : [
-          { month: 'January', netSales: 180, discount: 20 },
-          { month: 'February', netSales: 300, discount: 35 },
-          { month: 'March', netSales: 240, discount: 28 },
-          { month: 'April', netSales: 80, discount: 10 },
-          { month: 'May', netSales: 220, discount: 25 },
-          { month: 'June', netSales: 220, discount: 22 }
-        ];
+  const [timeFilter, setTimeFilter] = useState('week');
+  
+  // Debug logging
+  console.log('📊 SalesSummary - timeFilter:', timeFilter);
+  console.log('📊 SalesSummary - monthlyData:', monthlyData);
+  console.log('📊 SalesSummary - weeklyData:', weeklyData);
+  
+  // Use the appropriate data based on the filter
+  const chartData = timeFilter === 'week' 
+    ? (weeklyData && weeklyData?.length > 0 ? weeklyData : [])
+    : (monthlyData && monthlyData?.length > 0 ? monthlyData : []);
+
+  console.log('📊 SalesSummary - chartData:', chartData);
 
   const chartConfig = {
     netSales: {
@@ -65,40 +92,42 @@ export function SalesSummary({
     }
   };
 
+  const filterOptions = [
+    { label: 'Month', value: 'month' },
+    { label: 'Week', value: 'week' }
+  ];
+
   return (
     <Card className="p-6 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
       {/* Header Section */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Sales</h2>
-          <p className="text-sm text-gray-400">
+          <h2 className="text-lg font-bold">Sales</h2>
+          <p className="text-sm text-muted-foreground">
             Visualize sales performance trends
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="rounded-full bg-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-600">
-            Month
-          </button>
-          <button className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-            Week
-          </button>
-        </div>
+        <SegmentedControl
+          options={filterOptions}
+          value={timeFilter}
+          onChange={setTimeFilter}
+        />
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Left Panel - Summary Cards */}
         <div className="space-y-4 lg:col-span-1">
           {/* Net Sales Card */}
-          <Card className="border-zinc-800 bg-zinc-800">
+          <Card className="border-gray-300 dark:border-zinc-700 shadow-[5px_5px_5px_rgba(0,0,0,0.1)]">
             <CardContent className="relative p-4">
               <div className="absolute right-2 top-2">
                 <Info className="h-4 w-4 text-gray-400" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-300">Net Sales</h3>
-                <p className="text-2xl font-bold text-white">
-                  ₱
+                <h3 className="text-sm font-medium">Net Sales</h3>
+                <p className="text-2xl font-bold">
+                  ₱ {' '}
                   {netSales?.toLocaleString('en-PH', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
@@ -115,15 +144,15 @@ export function SalesSummary({
           </Card>
 
           {/* Discount Card */}
-          <Card className="border-zinc-800 bg-zinc-800">
+          <Card className="border-gray-300 dark:border-zinc-700 shadow-[5px_5px_5px_rgba(0,0,0,0.1)]">
             <CardContent className="relative p-4">
               <div className="absolute right-2 top-2">
                 <Info className="h-4 w-4 text-gray-400" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-300">Discount</h3>
-                <p className="text-2xl font-bold text-white">
-                  ₱
+                <h3 className="text-sm font-medium">Discount</h3>
+                <p className="text-2xl font-bold">
+                  ₱ {' '}
                   {discount?.toLocaleString('en-PH', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
@@ -141,28 +170,37 @@ export function SalesSummary({
         </div>
 
         {/* Right Panel - Bar Chart */}
-        <div className="lg:col-span-2">
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[280px] w-full"
-          >
-            <BarChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value: string) => value.slice(0, 3)}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dashed" />}
-              />
-              <Bar dataKey="netSales" fill="hsl(var(--chart-1))" radius={4} />
-              <Bar dataKey="discount" fill="hsl(var(--chart-2))" radius={4} />
-            </BarChart>
-          </ChartContainer>
+        <div className="lg:col-span-3">
+          {chartData && chartData.length > 0 ? (
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-auto h-[260px] w-full"
+            >
+              <BarChart accessibilityLayer data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey={timeFilter === 'week' ? 'week' : 'month'}
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value: string) => timeFilter === 'week' ? value : value.slice(0, 3)}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dashed" />}
+                />
+                <Bar dataKey="netSales" fill="hsl(var(--chart-1))" radius={4} />
+                <Bar dataKey="discount" fill="hsl(var(--chart-2))" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="aspect-auto h-[260px] w-full flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="text-sm font-medium">Loading Chart Data...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Card>

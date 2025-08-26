@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getDailyTransactionPerLocation } from '@/actions/getdata';
-import { MapPinHouse } from 'lucide-react';
+import { MapPinHouse, Loader2 } from 'lucide-react';
 import {
   Area,
   CartesianGrid,
@@ -37,7 +37,7 @@ interface ChartDataItem {
   [key: string]: string | number;
 }
 
-export function ChartLineMultiple() {
+export function DailyTransPerLocation() {
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,42 +97,6 @@ export function ChartLineMultiple() {
     return config;
   }, {} as ChartConfig);
 
-  if (isLoading) {
-    return (
-      <Card className="p-1 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Daily Transactions Per Location
-          </CardTitle>
-          <CardDescription>Loading Transaction Data...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-[249px] items-center justify-center">
-            <div className="text-muted-foreground">Fetching Data.....</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <Card className="p-1 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Daily Transactions Per Location
-          </CardTitle>
-          <CardDescription>No Transaction Data Available</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-[249px] justify-center marker:items-center">
-            <div className="text-muted-foreground">No Data To Display</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="p-1 shadow-[5px_5px_5px_rgba(0,0,0,0.2)]">
       <CardHeader className="flex flex-col space-y-0 border-b py-4">
@@ -146,70 +110,79 @@ export function ChartLineMultiple() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[200px] w-full pt-7"
-        >
-          <AreaChart
-            accessibilityLayer
-            data={chartData}
-            margin={{
-              left: 1,
-              right: 1,
-              top: 1
-            }}
+        {!isLoading && chartData && chartData.length > 0 ? (
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[200px] w-full pt-7"
           >
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={15}
-              tickFormatter={(value) =>
-                new Date(value).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric'
-                })
-              }
-            />
-            {/* <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={20}
-              tickFormatter={(value) => value.toLocaleString()}
-            /> */}
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-              <defs>
-               {locations.map((location) => (
-                 <linearGradient key={location} id={`gradient-${location}`} x1="0" y1="0" x2="0" y2="1">
-                   <stop
-                     offset="5%"
-                     stopColor={chartConfig[location]?.color}
-                     stopOpacity={0.8}
-                   />
-                   <stop
-                     offset="95%"
-                     stopColor={chartConfig[location]?.color}
-                     stopOpacity={0.1}
-                   />
-                 </linearGradient>
-               ))}
-              </defs>
-                {locations.map((location) => (
-                  <Area
-                    key={location}
-                    dataKey={location}
-                    type="monotone"
-                    // fill={`url(#gradient-${location})`}
-                    fill={chartConfig[location]?.color}
-                    fillOpacity={0.1}
-                    stroke={chartConfig[location]?.color}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-              ))}
-          </AreaChart>
-        </ChartContainer>
+            <AreaChart
+              accessibilityLayer
+              data={chartData}
+              margin={{
+                left: 1,
+                right: 1,
+                top: 1
+              }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={15}
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })
+                }
+              />
+              {/* <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={20}
+                tickFormatter={(value) => value.toLocaleString()}
+              /> */}
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <defs>
+                 {locations.map((location) => (
+                   <linearGradient key={location} id={`gradient-${location}`} x1="0" y1="0" x2="0" y2="1">
+                     <stop
+                       offset="5%"
+                       stopColor={chartConfig[location]?.color}
+                       stopOpacity={0.8}
+                     />
+                     <stop
+                       offset="95%"
+                       stopColor={chartConfig[location]?.color}
+                       stopOpacity={0.1}
+                     />
+                   </linearGradient>
+                 ))}
+                </defs>
+                  {locations.map((location) => (
+                    <Area
+                      key={location}
+                      dataKey={location}
+                      type="monotone"
+                      // fill={`url(#gradient-${location})`}
+                      fill={chartConfig[location]?.color}
+                      fillOpacity={0.1}
+                      stroke={chartConfig[location]?.color}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                ))}
+            </AreaChart>
+          </ChartContainer>
+        ) : (
+          <div className="aspect-auto h-[200px] w-full pt-7 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="text-sm font-medium">Loading Daily Transaction Data...</p>
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="pt-1">
         <div className="flex w-full items-start gap-3 text-sm">

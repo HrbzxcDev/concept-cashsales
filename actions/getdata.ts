@@ -307,12 +307,13 @@ export async function getMonthlySalesAndDiscountData() {
     const result = await db
       .select({
         month: sql<string>`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
+        monthNumber: sql<number>`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`,
         netSales: sum(cashsalesdetailsTable.netamount),
         discount: sum(cashsalesdetailsTable.discount)
       })
       .from(cashsalesdetailsTable)
-      .groupBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`)
-      .orderBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`);
+      .groupBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`, sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`);
 
     return result.map((row) => ({
       month: row.month?.trim() || '',
@@ -322,5 +323,84 @@ export async function getMonthlySalesAndDiscountData() {
   } catch (error) {
     console.error('Error getting monthly sales and discount data:', error);
     return [];
+  }
+}
+
+export async function getWeeklySalesAndDiscountData() {
+  try {
+    const sampleDates = await db
+      .select({
+        date: cashsalesdetailsTable.cashsalesdate,
+        netAmount: cashsalesdetailsTable.netamount
+      })
+      .from(cashsalesdetailsTable)
+      .limit(5);
+
+    console.log('📅 Sample dates from database:', sampleDates);
+
+    // Get weekly data with date range formatting
+    const result = await db
+      .select({
+        weekStart: sql<string>`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`,
+        weekEnd: sql<string>`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate}) + INTERVAL '6 days'`,
+        netSales: sum(cashsalesdetailsTable.netamount),
+        discount: sum(cashsalesdetailsTable.discount)
+      })
+      .from(cashsalesdetailsTable)
+      .groupBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`)
+      .orderBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`);
+
+    console.log('📊 Weekly data result:', result);
+
+    return result.map((row) => {
+      // Format the date range as MM/DD-MM/DD
+      const startDate = new Date(row.weekStart);
+      const endDate = new Date(row.weekEnd);
+      
+      const startFormatted = `${String(startDate.getMonth() + 1).padStart(2, '0')}/${String(startDate.getDate()).padStart(2, '0')}`;
+      const endFormatted = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
+      
+      return {
+        week: `${startFormatted}-${endFormatted}`,
+        netSales: Number(row.netSales) || 0,
+        discount: Number(row.discount) || 0
+      };
+    });
+  } catch (error) {
+    console.error('Error getting weekly sales and discount data:', error);
+    
+    // Fallback: try with a different approach for databases that don't support DATE_TRUNC
+    try {
+      const fallbackResult = await db
+        .select({
+          weekStart: sql<string>`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`,
+          weekEnd: sql<string>`DATE(${cashsalesdetailsTable.cashsalesdate})`,
+          netSales: sum(cashsalesdetailsTable.netamount),
+          discount: sum(cashsalesdetailsTable.discount)
+        })
+        .from(cashsalesdetailsTable)
+        .groupBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`)
+        .orderBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`);
+
+      console.log('📊 Weekly data fallback result:', fallbackResult);
+
+      return fallbackResult.map((row) => {
+        // Format the date range as MM/DD-MM/DD
+        const startDate = new Date(row.weekStart);
+        const endDate = new Date(row.weekEnd);
+        
+        const startFormatted = `${String(startDate.getMonth() + 1).padStart(2, '0')}/${String(startDate.getDate()).padStart(2, '0')}`;
+        const endFormatted = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
+        
+        return {
+          week: `${startFormatted}-${endFormatted}`,
+          netSales: Number(row.netSales) || 0,
+          discount: Number(row.discount) || 0
+        };
+      });
+    } catch (fallbackError) {
+      console.error('Error in fallback weekly data query:', fallbackError);
+      return [];
+    }
   }
 }

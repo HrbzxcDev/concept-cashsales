@@ -20,7 +20,7 @@ import {
   ChartTooltipContent
 } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Loader2 } from 'lucide-react';
 
 interface TransPerLocationData {
   count: number;
@@ -80,55 +80,64 @@ export function TransPerLocation() {
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[205px] w-full"
-        >
-          <BarChart
-            data={locationData}
-            margin={{
-              left: -5
-            }}
-            accessibilityLayer
+        {locationData && locationData.length > 0 ? (
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[205px] w-full"
           >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="location"
-              tickLine={false}
-              tickMargin={5}
-              axisLine={false}
-              // angle={-45}
-              // textAnchor="center"
-              height={30}
-              tickFormatter={(value) => {
-                return value.length > 10 ? value.substring(0, 20) : value;
+            <BarChart
+              data={locationData}
+              margin={{
+                left: -5
               }}
-            />
-            {/* BarChart */}
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={10}
-              tickFormatter={(value) => {
-                return value.toLocaleString();
-              }}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => `Location: ${value}`}
-                />
-              }
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            <Bar
-              dataKey="count"
-              fill="var(--color-count)"
-              radius={[4, 4, 0, 0]}
-              barSize={80}
-            />
-          </BarChart>
-        </ChartContainer>
+              accessibilityLayer
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="location"
+                tickLine={false}
+                tickMargin={5}
+                axisLine={false}
+                // angle={-45}
+                // textAnchor="center"
+                height={30}
+                tickFormatter={(value) => {
+                  return value.length > 10 ? value.substring(0, 20) : value;
+                }}
+              />
+              {/* BarChart */}
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={10}
+                tickFormatter={(value) => {
+                  return value.toLocaleString();
+                }}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => `Location: ${value}`}
+                  />
+                }
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar
+                dataKey="count"
+                fill="var(--color-count)"
+                radius={[4, 4, 0, 0]}
+                barSize={80}
+              />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="aspect-auto h-[205px] w-full flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="text-sm font-medium">Loading Location Data...</p>
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

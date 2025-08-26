@@ -252,23 +252,24 @@ export async function GET(request: NextRequest) {
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
       // Save activity for empty response, but avoid duplicates for the same date
+      // Only log for manual fetches or if no activity was logged today for automatic fetches
       try {
+        const baseNoDataDesc = 'API Fetch Operation - No Data Returned From External API';
         const existingNoData = await db
           .select({ id: apiactivityTable.id })
           .from(apiactivityTable)
           .where(
             and(
               eq(apiactivityTable.datefetched, today),
-              eq(
-                apiactivityTable.description,
-                'API Fetch Operation - No Data Returned From External API'
-              )
+              eq(apiactivityTable.description, baseNoDataDesc)
             )
           )
           .limit(1);
 
-        if (existingNoData.length === 0) {
-          const baseNoDataDesc = 'API Fetch Operation - No Data Returned ';
+        // Only log if it's a manual fetch or if no activity was logged today for automatic fetches
+        const shouldLogNoData = customDescription || existingNoData.length === 0;
+        
+        if (shouldLogNoData) {
           let noDataDescription = customDescription
             ? `${customDescription} - ${baseNoDataDesc}`
             : baseNoDataDesc;
@@ -291,7 +292,7 @@ export async function GET(request: NextRequest) {
           await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
           console.log(
-            `Skipping duplicate no-data activity for ${today} (already logged)`
+            `Skipping duplicate no-data activity for ${today} (already logged for automatic fetch)`
           );
         }
       } catch (activityError) {
@@ -354,13 +355,49 @@ export async function GET(request: NextRequest) {
     );
 
     if (validRecords.length === 0) {
-      // Save activity for no valid records
+      // Save activity for no valid records, but only for manual fetches or if not already logged today
       try {
-        await saveAPIFetchActivity(
-          'API Fetch Operation - No Valid Fecords Found After Filtering',
-          0,
-          true
-        );
+        const baseNoValidDesc = 'API Fetch Operation - No Valid Records Found After Filtering';
+        const existingNoValid = await db
+          .select({ id: apiactivityTable.id })
+          .from(apiactivityTable)
+          .where(
+            and(
+              eq(apiactivityTable.datefetched, today),
+              eq(apiactivityTable.description, baseNoValidDesc)
+            )
+          )
+          .limit(1);
+
+        // Only log if it's a manual fetch or if no activity was logged today for automatic fetches
+        const shouldLogNoValid = customDescription || existingNoValid.length === 0;
+        
+        if (shouldLogNoValid) {
+          let noValidDescription = customDescription
+            ? `${customDescription} - ${baseNoValidDesc}`
+            : baseNoValidDesc;
+
+          // Add date range to description if it's a manual fetch with date range
+          if (customDescription && dateFrom && dateTo) {
+            const formatDateForDisplay = (dateStr: string) => {
+              const date = new Date(dateStr);
+              return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            };
+            const fromDisplay = formatDateForDisplay(dateFrom);
+            const toDisplay = formatDateForDisplay(dateTo);
+            noValidDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseNoValidDesc}`;
+          }
+
+          await saveAPIFetchActivity(noValidDescription, 0, true);
+        } else {
+          console.log(
+            `Skipping duplicate no-valid-records activity for ${today} (already logged for automatic fetch)`
+          );
+        }
       } catch (activityError) {
         console.error(
           'Failed to save API fetch activity for no valid records:',
@@ -508,11 +545,77 @@ export async function GET(request: NextRequest) {
 
       // Save success activity when there are NEW changes from the API.
       // For manual fetches (with customDescription), always log activity regardless of new records.
-      // For automatic fetches, only log when there are new records saved.
-      const shouldSaveActivity = customDescription ? true : savedCount > 0;
+      // For automatic fetches, only log when there are new records saved or updated.
+      // Additionally, for automatic fetches, we want to be more strict about what constitutes "new data"
+      const hasChanges = savedCount > 0 || updatedCount > 0;
+      let shouldSaveActivity = customDescription ? true : hasChanges;
+      
+      // For automatic fetches, be more strict - only log if there are actual meaningful changes
+      if (!customDescription) {
+        // If no records were saved or updated, definitely don't log
+        if (!hasChanges) {
+          shouldSaveActivity = false;
+        }
+        // If only "saved" records but no updates, and this is a repeated operation, 
+        // it might be duplicate data being inserted
+        else if (savedCount > 0 && updatedCount === 0) {
+          // Check if we've already logged a similar activity today
+          try {
+            const similarActivity = await db
+              .select({ id: apiactivityTable.id })
+              .from(apiactivityTable)
+              .where(
+                and(
+                  eq(apiactivityTable.datefetched, today),
+                  // Look for activities with similar saved counts
+                  // This is a heuristic to detect duplicate operations
+                )
+              )
+              .limit(5); // Check last 5 activities
+            
+            // If we have multiple activities today with similar patterns, be more cautious
+            if (similarActivity.length >= 2) {
+              console.log(
+                `Multiple similar activities detected today, skipping to prevent duplicate logs`
+              );
+              shouldSaveActivity = false;
+            }
+          } catch (checkError) {
+            console.error('Error checking for similar activities:', checkError);
+            // Continue with logging if we can't check
+          }
+        }
+      }
+      
+      // For automatic fetches, check if we already logged a similar activity recently
+      if (!customDescription && hasChanges) {
+        try {
+          const recentActivity = await db
+            .select({ id: apiactivityTable.id })
+            .from(apiactivityTable)
+            .where(
+              and(
+                eq(apiactivityTable.description, activityDescription),
+                eq(apiactivityTable.datefetched, today)
+              )
+            )
+            .limit(1);
+          
+          if (recentActivity.length > 0) {
+            shouldSaveActivity = false;
+            console.log(
+              `Skipping duplicate main activity log for today (similar activity already logged)`
+            );
+          }
+        } catch (duplicateCheckError) {
+          console.error('Error checking for duplicate main activity:', duplicateCheckError);
+          // Continue with logging if we can't check for duplicates
+        }
+      }
+      
       if (!shouldSaveActivity) {
         console.log(
-          'Skipping activity log (no new records saved, only updates to existing data)'
+          'Skipping activity log (no new records saved or updated, data already exists)'
         );
       }
 
@@ -621,11 +724,15 @@ export async function GET(request: NextRequest) {
           );
         }
 
+        // For automatic fetches, don't force re-run unless explicitly requested
+        // For manual fetches, allow force re-run
+        const shouldForceDetails = customDescription ? forceDetails : false;
+        
         detailsResult = await fetchAndSaveCashSalesDetails(fromDate, toDate, {
           upsert: upsert,
           batchSize: detailsBatchSize,
           limit: detailsLimit,
-          force: forceDetails
+          force: shouldForceDetails
         });
 
         console.log(
@@ -635,10 +742,72 @@ export async function GET(request: NextRequest) {
 
         // Save activity for details fetch only when there are NEW changes
         // For manual fetches (with customDescription), always log details activity regardless of new records.
-        // For automatic fetches, only log when there are new records saved.
+        // For automatic fetches, only log when there are new records saved or updated.
         if (detailsResult.success) {
           const newRecords = detailsResult.savedCount || 0;
-          const shouldLogDetails = customDescription ? true : newRecords > 0;
+          const updatedRecords = detailsResult.updatedCount || 0;
+          const hasDetailsChanges = newRecords > 0 || updatedRecords > 0;
+          const wasAlreadyCompleted = detailsResult.alreadyCompleted || false;
+          
+          // For automatic fetches, be more strict about logging
+          let shouldLogDetails = customDescription ? true : hasDetailsChanges;
+          
+          // Don't log if the operation was already completed (for automatic fetches)
+          if (!customDescription && wasAlreadyCompleted) {
+            shouldLogDetails = false;
+            console.log(
+              'Skipping details fetch activity log (operation already completed previously)'
+            );
+          }
+          
+          // For automatic fetches, add additional checks to prevent unnecessary logging
+          if (!customDescription) {
+            // If no changes, definitely don't log
+            if (!hasDetailsChanges) {
+              shouldLogDetails = false;
+              console.log(
+                'Skipping details fetch activity log (no new records saved or updated, data already exists)'
+              );
+            }
+            // If there are changes, check for duplicates
+            else {
+              const formatDateForDisplay = (dateStr: string) => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                });
+              };
+              const fromDisplay = formatDateForDisplay(fromDate);
+              const toDisplay = formatDateForDisplay(toDate);
+              const detailsDescriptionPattern = `CashSales Details - (${fromDisplay} to ${toDisplay}) - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
+              
+              try {
+                const recentActivity = await db
+                  .select({ id: apiactivityTable.id })
+                  .from(apiactivityTable)
+                  .where(
+                    and(
+                      eq(apiactivityTable.description, detailsDescriptionPattern),
+                      eq(apiactivityTable.datefetched, today)
+                    )
+                  )
+                  .limit(1);
+                
+                if (recentActivity.length > 0) {
+                  shouldLogDetails = false;
+                  console.log(
+                    `Skipping duplicate details activity log for today (similar activity already logged)`
+                  );
+                }
+              } catch (duplicateCheckError) {
+                console.error('Error checking for duplicate details activity:', duplicateCheckError);
+                // Continue with logging if we can't check for duplicates
+              }
+            }
+          }
+          
           if (shouldLogDetails) {
             const formatDateForDisplay = (dateStr: string) => {
               const date = new Date(dateStr);
@@ -652,11 +821,7 @@ export async function GET(request: NextRequest) {
             const toDisplay = formatDateForDisplay(toDate);
             const manualPrefix = customDescription ? 'Manual Fetch - ' : '';
             const detailsDescription = `CashSales Details - ${manualPrefix} (${fromDisplay} to ${toDisplay}) - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
-            await saveAPIFetchActivity(detailsDescription, newRecords, true);
-          } else {
-            console.log(
-              'Skipping details fetch activity log (no new records saved, only updates to existing data)'
-            );
+            await saveAPIFetchActivity(detailsDescription, newRecords + updatedRecords, true);
           }
         } else {
           await saveAPIFetchActivity(
