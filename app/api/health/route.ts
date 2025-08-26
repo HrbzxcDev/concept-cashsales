@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/utils/db/drizzle';
-import { apifetchedTable } from '@/utils/db/schema';
+import { fetchCompletionTable } from '@/utils/db/schema';
 import { sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -8,17 +8,17 @@ export async function GET(request: NextRequest) {
     // Check database connection
     const recentActivity = await db
       .select({ count: sql<number>`count(*)` })
-      .from(apifetchedTable)
-      .where(sql`${apifetchedTable.createdAt} >= NOW() - INTERVAL '24 hours'`);
+      .from(fetchCompletionTable)
+      .where(sql`${fetchCompletionTable.createdAt} >= NOW() - INTERVAL '24 hours'`);
     
     // Get last successful fetch
-    const lastFetch = await db
+    const lastFetch = await db  
       .select()
-      .from(apifetchedTable)
+            .from(fetchCompletionTable)
       .where(
-        sql`${apifetchedTable.status} = true AND ${apifetchedTable.description} LIKE '%Vercel%'`
+        sql`${fetchCompletionTable.status} = true AND ${fetchCompletionTable.operationType} LIKE '%cashsales_details%'`
       )
-      .orderBy(sql`${apifetchedTable.createdAt} DESC`)
+      .orderBy(sql`${fetchCompletionTable.createdAt} DESC`)
       .limit(1);
     
     return NextResponse.json({
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
       recentActivity: recentActivity[0]?.count || 0,
       lastFetch: lastFetch[0] ? {
         time: lastFetch[0].createdAt.toISOString(),
-        description: lastFetch[0].description,
-        count: lastFetch[0].count
+        operationType: lastFetch[0].operationType,
+        recordsProcessed: lastFetch[0].recordsProcessed
       } : null,
       environment: process.env.NODE_ENV,
       webhookUrl: `${process.env.NEXTAUTH_URL || process.env.VERCEL_URL}/api/vercel-webhook`

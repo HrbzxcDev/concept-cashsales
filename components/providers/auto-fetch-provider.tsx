@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode
+} from 'react';
 
 interface AutoFetchContextType {
   isEnabled: boolean;
@@ -13,7 +19,9 @@ interface AutoFetchContextType {
   triggerRefresh: () => void;
 }
 
-const AutoFetchContext = createContext<AutoFetchContextType | undefined>(undefined);
+const AutoFetchContext = createContext<AutoFetchContextType | undefined>(
+  undefined
+);
 
 interface AutoFetchProviderProps {
   children: ReactNode;
@@ -22,11 +30,11 @@ interface AutoFetchProviderProps {
   fetchInterval?: number; // in milliseconds, 0 to disable
 }
 
-export function AutoFetchProvider({ 
-  children, 
-  defaultEnabled = true, 
+export function AutoFetchProvider({
+  children,
+  defaultEnabled = true,
   autoTriggerOnLoad = true,
-  fetchInterval = 0 
+  fetchInterval = 0
 }: AutoFetchProviderProps) {
   const [isEnabled, setIsEnabled] = useState(defaultEnabled);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
@@ -36,7 +44,7 @@ export function AutoFetchProvider({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const triggerRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const triggerFetch = async () => {
@@ -45,38 +53,54 @@ export function AutoFetchProvider({
     try {
       setIsFetching(true);
       setFetchError(null);
-      
+
       console.log('🔄 Triggering fetch-and-save...');
-      
-      const response = await fetch('/api/fetch-and-save?limit=100&upsert=true', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
+
+      const response = await fetch(
+        '/api/fetch-and-save?limit=1000&upsert=true',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
-        console.log('✅ Fetch completed successfully:', result.message);
-        console.log(`📊 Saved: ${result.savedCount}, Updated: ${result.updatedCount}`);
-        setLastFetchTime(new Date());
-        
-        // Trigger refresh of all components after successful fetch
-        if (result.savedCount > 0 || result.updatedCount > 0) {
-          console.log('🔄 Triggering component refresh due to data changes...');
-          triggerRefresh();
+        if (result.alreadyCompleted) {
+          console.log('ℹ️ Fetch skipped - already completed:', result.message);
+          console.log(
+            `📊 Previous run: Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
+          );
+          setLastFetchTime(new Date());
+        } else {
+          console.log('✅ Fetch completed successfully:', result.message);
+          console.log(
+            `📊 Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
+          );
+          setLastFetchTime(new Date());
+
+          // Trigger refresh of all components after successful fetch
+          if (result.savedCount > 0 || result.updatedCount > 0) {
+            console.log(
+              '🔄 Triggering component refresh due to data changes...'
+            );
+            triggerRefresh();
+          }
         }
       } else {
         console.warn('⚠️ Fetch completed with warnings:', result.message);
         setFetchError(result.message);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown error occurred';
       console.error('❌ Fetch failed:', errorMessage);
       setFetchError(errorMessage);
     } finally {
@@ -92,7 +116,7 @@ export function AutoFetchProvider({
         triggerFetch();
         setHasTriggeredOnLoad(true);
       }, 2000); // 2 second delay
-      
+
       return () => clearTimeout(timer);
     }
   }, [autoTriggerOnLoad, isEnabled, hasTriggeredOnLoad]);

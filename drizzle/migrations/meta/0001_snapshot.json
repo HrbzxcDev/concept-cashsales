@@ -1,0 +1,433 @@
+{
+  "id": "cb799ed3-8e58-4a00-bd86-2166715d2e4f",
+  "prevId": "cb799ed3-8e58-4a00-bd86-2166715d2e4e",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.tblapiactivity": {
+      "name": "tblapiactivity",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datefetched": {
+          "name": "datefetched",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timefetched": {
+          "name": "timefetched",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tblapiactivity_id_unique": {
+          "name": "tblapiactivity_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tblcashsales": {
+      "name": "tblcashsales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cashsalesid": {
+          "name": "cashsalesid",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cashsalesdate": {
+          "name": "cashsalesdate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cashsalescode": {
+          "name": "cashsalescode",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer": {
+          "name": "customer",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stocklocation": {
+          "name": "stocklocation",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tblcashsales_id_unique": {
+          "name": "tblcashsales_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["id"]
+        },
+        "tblcashsales_cashsalescode_unique": {
+          "name": "tblcashsales_cashsalescode_unique",
+          "nullsNotDistinct": false,
+          "columns": ["cashsalescode"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tblcashsalesdetails": {
+      "name": "tblcashsalesdetails",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "stockid": {
+          "name": "stockid",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cashsalescode": {
+          "name": "cashsalescode",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cashsalesdate": {
+          "name": "cashsalesdate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numbering": {
+          "name": "numbering",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stockcode": {
+          "name": "stockcode",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uom": {
+          "name": "uom",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unitprice": {
+          "name": "unitprice",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount": {
+          "name": "discount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taxcode": {
+          "name": "taxcode",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taxamount": {
+          "name": "taxamount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "netamount": {
+          "name": "netamount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "glaccount": {
+          "name": "glaccount",
+          "type": "varchar(15)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stocklocation": {
+          "name": "stocklocation",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "costcentre": {
+          "name": "costcentre",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project": {
+          "name": "project",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "serialnumber": {
+          "name": "serialnumber",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tblcashsalesdetails_cashsalescode_tblcashsales_cashsalescode_fk": {
+          "name": "tblcashsalesdetails_cashsalescode_tblcashsales_cashsalescode_fk",
+          "tableFrom": "tblcashsalesdetails",
+          "tableTo": "tblcashsales",
+          "columnsFrom": ["cashsalescode"],
+          "columnsTo": ["cashsalescode"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tblcashsalesdetails_id_unique": {
+          "name": "tblcashsalesdetails_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tblfetchcompletion": {
+      "name": "tblfetchcompletion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "operationtype": {
+          "name": "operationtype",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datefrom": {
+          "name": "datefrom",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dateto": {
+          "name": "dateto",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completedat": {
+          "name": "completedat",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "recordsprocessed": {
+          "name": "recordsprocessed",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "savedcount": {
+          "name": "savedcount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedcount": {
+          "name": "updatedcount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tblfetchcompletion_id_unique": {
+          "name": "tblfetchcompletion_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

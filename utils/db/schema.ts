@@ -60,6 +60,20 @@ export const cashsalesdetailsTable = pgTable('tblcashsalesdetails', {
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
 
+export const fetchCompletionTable = pgTable('tblfetchcompletion', {
+  id: uuid('id').notNull().primaryKey().defaultRandom().unique(),
+  operationType: varchar('operationtype', { length: 50 }).notNull(), // 'cashsales_details'
+  dateFrom: date('datefrom').notNull(),
+  dateTo: date('dateto').notNull(),
+  completedAt: timestamp('completedat').notNull().defaultNow(),
+  recordsProcessed: numeric('recordsprocessed').notNull(),
+  savedCount: numeric('savedcount').notNull(),
+  updatedCount: numeric('updatedcount').notNull(),
+  status: boolean('status').notNull().default(true),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow()
+});
+
 // {
 //   "id": "f1e67180-e6bd-4161-ad23-638e77bc04bd",
 //   "numbering": "1",

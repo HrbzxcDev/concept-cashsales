@@ -7,8 +7,6 @@ import {
   Area,
   CartesianGrid,
   AreaChart,
-  Line,
-  LineChart,
   XAxis,
   YAxis,
 } from 'recharts';

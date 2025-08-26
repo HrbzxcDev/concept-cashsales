@@ -6,7 +6,7 @@ import {
   apiactivityTable,
   cashsalesdetailsTable
 } from '@/utils/db/schema';
-import { count, desc, sql, asc, eq } from 'drizzle-orm';
+import { count, desc, sql, asc, eq, sum } from 'drizzle-orm';
 
 export async function gettotaltrans() {
   try {
@@ -15,6 +15,17 @@ export async function gettotaltrans() {
     return result[0]?.count || 0;
   } catch (error) {
     // console.error('Error getting total transactions:', error);
+    return 0;
+  }
+}
+
+export async function gettotalitemsquantity() {
+  try {
+    const result = await db
+      .select({ sum: sum(cashsalesdetailsTable.quantity) })
+      .from(cashsalesdetailsTable);
+    return result[0]?.sum || 0;
+  } catch (error) {
     return 0;
   }
 }
@@ -48,6 +59,48 @@ export async function getCashsalesData() {
   }
 }
 
+export async function getCashsalesDetailsData() {
+  try {
+    console.log('🔍 Fetching cashsales details data from database...');
+    const result = await db
+      .select({
+        cashsalesdate: cashsalesdetailsTable.cashsalesdate,
+        quantity: cashsalesdetailsTable.quantity
+      })
+      .from(cashsalesdetailsTable)
+      .orderBy(desc(cashsalesdetailsTable.cashsalesdate));
+
+    console.log('📊 Database result length:', result?.length || 0);
+    console.log('📊 Database result sample:', result?.slice(0, 3));
+    console.log(
+      '📊 Total quantity sum:',
+      result?.reduce((sum, row) => sum + Number(row.quantity || 0), 0) || 0
+    );
+
+    // Check for unique dates
+    const uniqueDates = new Set(
+      result?.map((row) => row.cashsalesdate?.toString()) || []
+    );
+    console.log('📅 Unique dates in database:', Array.from(uniqueDates).sort());
+    console.log('📅 Number of unique dates:', uniqueDates.size);
+
+    // Check quantity distribution
+    const quantities = result?.map((row) => Number(row.quantity || 0)) || [];
+    console.log('📊 Quantity distribution:', {
+      min: Math.min(...quantities),
+      max: Math.max(...quantities),
+      avg: Math.round(
+        quantities.reduce((sum, qty) => sum + qty, 0) / quantities.length
+      )
+    });
+
+    return result;
+  } catch (error) {
+    console.error('❌ Error getting cashsales details data:', error);
+    return [];
+  }
+}
+
 export async function getTransactionCountPerLocation() {
   try {
     const result = await db
@@ -77,17 +130,7 @@ export async function getPercentageChangeTotalTransaction() {
     // Use toLocaleDateString to ensure we get the correct local date
     const yesterdayString = yesterday.toLocaleDateString('en-CA', {
       timeZone: 'Asia/Manila'
-    }); // YYYY-MM-DD format
-
-    // Debug logging to check the calculated date
-    // console.log('Today:', today.toISOString());
-    // console.log('Yesterday calculated:', yesterday.toISOString());
-    // console.log('Yesterday string (local):', yesterdayString);
-    // console.log(
-    //   'Today local:',
-    //   today.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
-    // );
-
+    });
     // Get total transactions count
     const totalResult = await db
       .select({
@@ -121,6 +164,60 @@ export async function getPercentageChangeTotalTransaction() {
     return {
       totalTransactions: 0,
       yesterdayTransactions: 0,
+      percentage: 0,
+      yesterdayDate: ''
+    };
+  }
+}
+
+export async function getPercentageChangeTotalItemsQuantity() {
+  try {
+    // Get yesterday's date in local timezone to avoid UTC issues
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    // Format date in local timezone (YYYY-MM-DD) - ensure we're using local time
+    // Use toLocaleDateString to ensure we get the correct local date
+    const yesterdayString = yesterday.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    });
+    // Get total transactions count by quantity
+    const totalResult = await db
+      .select({
+        totalCount: sum(cashsalesdetailsTable.quantity)
+      })
+      .from(cashsalesdetailsTable);
+
+    const totalCount = Number(totalResult[0]?.totalCount) || 0;
+
+    // Get yesterday's transactions count by quantity
+    const yesterdayResult = await db
+      .select({
+        yesterdayCount: sum(cashsalesdetailsTable.quantity)
+      })
+      .from(cashsalesdetailsTable)
+      .where(eq(cashsalesdetailsTable.cashsalesdate, yesterdayString));
+
+    const yesterdayCount = Number(yesterdayResult[0]?.yesterdayCount) || 0;
+
+    // Calculate percentage
+    const percentage = totalCount > 0 ? (yesterdayCount / totalCount) * 100 : 0;
+    console.log('totalCount', totalCount);
+    console.log('yesterdayCount', yesterdayCount);
+    console.log('percentage', percentage);
+
+    return {
+      totalItemsQuantity: totalCount,
+      yesterdayItemsQuantity: yesterdayCount,
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      yesterdayDate: yesterdayString
+    };
+  } catch (error) {
+    // console.error('Error getting transaction percentage from yesterday:', error);
+    return {
+      totalItemsQuantity: 0,
+      yesterdayItemsQuantity: 0,
       percentage: 0,
       yesterdayDate: ''
     };
@@ -179,51 +276,51 @@ export async function getRecentApiFetches(limit: number = 0) {
   }
 }
 
-// Get cash sales details by cash sales code
-export async function getCashSalesDetailsByCode(cashsalescode: string) {
+export async function getTotalNetAmount() {
+  try {
+    const result = await db
+      .select({ totalNetAmount: sum(cashsalesdetailsTable.netamount) })
+      .from(cashsalesdetailsTable);
+
+    return Number(result[0]?.totalNetAmount) || 0;
+  } catch (error) {
+    console.error('Error getting total net amount:', error);
+    return 0;
+  }
+}
+
+export async function getTotalDiscount() {
+  try {
+    const result = await db
+      .select({ totalDiscount: sum(cashsalesdetailsTable.discount) })
+      .from(cashsalesdetailsTable);
+
+    return Number(result[0]?.totalDiscount) || 0;
+  } catch (error) {
+    console.error('Error getting total discount:', error);
+    return 0;
+  }
+}
+
+export async function getMonthlySalesAndDiscountData() {
   try {
     const result = await db
       .select({
-        id: cashsalesdetailsTable.id,
-        stockid: cashsalesdetailsTable.stockid,
-        cashsalescode: cashsalesdetailsTable.cashsalescode,
-        cashsalesdate: cashsalesdetailsTable.cashsalesdate,
-        numbering: cashsalesdetailsTable.numbering,
-        stockcode: cashsalesdetailsTable.stockcode,
-        description: cashsalesdetailsTable.description,
-        quantity: cashsalesdetailsTable.quantity,
-        uom: cashsalesdetailsTable.uom,
-        unitprice: cashsalesdetailsTable.unitprice,
-        discount: cashsalesdetailsTable.discount,
-        amount: cashsalesdetailsTable.amount,
-        taxcode: cashsalesdetailsTable.taxcode,
-        taxamount: cashsalesdetailsTable.taxamount,
-        netamount: cashsalesdetailsTable.netamount,
-        glaccount: cashsalesdetailsTable.glaccount,
-        stocklocation: cashsalesdetailsTable.stocklocation,
-        costcentre: cashsalesdetailsTable.costcentre,
-        project: cashsalesdetailsTable.project,
-        serialnumber: cashsalesdetailsTable.serialnumber,
-        status: cashsalesdetailsTable.status,
-        createdAt: cashsalesdetailsTable.createdAt,
-        updatedAt: cashsalesdetailsTable.updatedAt
+        month: sql<string>`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
+        netSales: sum(cashsalesdetailsTable.netamount),
+        discount: sum(cashsalesdetailsTable.discount)
       })
       .from(cashsalesdetailsTable)
-      .where(eq(cashsalesdetailsTable.cashsalescode, cashsalescode))
-      .orderBy(asc(cashsalesdetailsTable.numbering));
+      .groupBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`)
+      .orderBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`);
 
-    // Ensure numeric values are returned as numbers
     return result.map((row) => ({
-      ...row,
-      quantity: Number(row.quantity),
-      unitprice: Number(row.unitprice),
-      discount: Number(row.discount),
-      amount: Number(row.amount),
-      taxamount: Number(row.taxamount),
-      netamount: Number(row.netamount)
+      month: row.month?.trim() || '',
+      netSales: Number(row.netSales) || 0,
+      discount: Number(row.discount) || 0
     }));
   } catch (error) {
-    // console.error('Error getting cash sales details by code:', error);
+    console.error('Error getting monthly sales and discount data:', error);
     return [];
   }
 }

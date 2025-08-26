@@ -1,5 +1,9 @@
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable, cashsalesdetailsTable } from '@/utils/db/schema';
+import {
+  cashsalesTable,
+  cashsalesdetailsTable,
+  fetchCompletionTable
+} from '@/utils/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 
 const API_BASE_URL =
@@ -113,6 +117,7 @@ export interface FetchAndSaveResponse {
   savedCount?: number;
   updatedCount?: number;
   errors?: string[];
+  alreadyCompleted?: boolean;
 }
 
 export interface FetchAndSaveOptions {
@@ -150,12 +155,12 @@ export async function fetchAndSaveCashSales(
   options: FetchAndSaveOptions = {}
 ): Promise<FetchAndSaveResponse> {
   const {
-    limit = 100,
+    limit = 500,
     offset = 0,
     dateFrom,
     dateTo,
     upsert = false,
-    batchSize = 100
+    batchSize = 500
   } = options;
 
   try {
@@ -643,8 +648,6 @@ function transformDetailLineToDB(
   } as any; // Type assertion to handle numeric field types
 }
 
-
-
 /**
  * Fetches and saves cash sales details for a specific date range
  * (Completely fixed version with correct Drizzle ORM syntax)
@@ -656,12 +659,48 @@ export async function fetchAndSaveCashSalesDetails(
     upsert?: boolean;
     batchSize?: number;
     limit?: number;
+    force?: boolean; // New option to force re-run even if already completed
   } = {}
 ): Promise<FetchAndSaveResponse> {
-  const { upsert = false, batchSize = 100, limit } = options;
+  const { upsert = false, batchSize = 500, limit, force = false } = options;
 
   try {
-    console.log(`Starting fetch and save cash sales details operation for date range: ${dateFrom} to ${dateTo}`);
+    console.log(
+      `Starting fetch and save cash sales details operation for date range: ${dateFrom} to ${dateTo}`
+    );
+
+    // Check if this operation has already been completed (unless forced)
+    if (!force) {
+      const existingCompletion = await db
+        .select()
+        .from(fetchCompletionTable)
+        .where(
+          and(
+            eq(fetchCompletionTable.operationType, 'cashsales_details'),
+            eq(fetchCompletionTable.dateFrom, dateFrom),
+            eq(fetchCompletionTable.dateTo, dateTo)
+          )
+        )
+        .limit(1);
+
+      if (existingCompletion.length > 0) {
+        const completion = existingCompletion[0];
+        console.log(
+          `Operation already completed for date range ${dateFrom} to ${dateTo} at ${completion.completedAt}`
+        );
+        console.log(
+          `Previous run processed ${completion.recordsProcessed} records, saved ${completion.savedCount}, updated ${completion.updatedCount}`
+        );
+
+        return {
+          success: true,
+          message: `Operation already completed for date range ${dateFrom} to ${dateTo}. Previous run: ${completion.recordsProcessed} processed, ${completion.savedCount} saved, ${completion.updatedCount} updated. Use force=true to re-run.`,
+          savedCount: Number(completion.savedCount),
+          updatedCount: Number(completion.updatedCount),
+          alreadyCompleted: true
+        };
+      }
+    }
 
     // Get cash sales codes from the database for the specified date range
     const cashSalesQuery = db
@@ -682,7 +721,9 @@ export async function fetchAndSaveCashSalesDetails(
       ? await cashSalesQuery.limit(limit)
       : await cashSalesQuery;
 
-    console.log(`Found ${cashSales.length} cash sales codes to process for date range ${dateFrom} to ${dateTo}`);
+    console.log(
+      `Found ${cashSales.length} cash sales codes to process for date range ${dateFrom} to ${dateTo}`
+    );
 
     if (cashSales.length === 0) {
       return {
@@ -725,7 +766,9 @@ export async function fetchAndSaveCashSalesDetails(
             continue;
           }
 
-          console.log(`Found ${detailResponse.details.length} detail lines for cash sales code: ${cashSale.cashsalescode}`);
+          console.log(
+            `Found ${detailResponse.details.length} detail lines for cash sales code: ${cashSale.cashsalescode}`
+          );
 
           // Process each detail line
           for (const detailLine of detailResponse.details) {
@@ -736,7 +779,9 @@ export async function fetchAndSaveCashSalesDetails(
                 cashSale.cashsalesdate
               );
 
-              console.log(`Processing detail line - numbering: ${transformedData.numbering}, stockcode: ${transformedData.stockcode}`);
+              console.log(
+                `Processing detail line - numbering: ${transformedData.numbering}, stockcode: ${transformedData.stockcode}`
+              );
 
               if (upsert) {
                 // Check if record exists (using cashsalescode and numbering as unique identifier)
@@ -775,14 +820,18 @@ export async function fetchAndSaveCashSalesDetails(
                       )
                     );
                   updatedCount++;
-                  console.log(`Updated detail line - numbering: ${transformedData.numbering}`);
+                  console.log(
+                    `Updated detail line - numbering: ${transformedData.numbering}`
+                  );
                 } else {
                   // Insert new record
                   await db
                     .insert(cashsalesdetailsTable)
                     .values(transformedData);
                   savedCount++;
-                  console.log(`Inserted new detail line - numbering: ${transformedData.numbering}`);
+                  console.log(
+                    `Inserted new detail line - numbering: ${transformedData.numbering}`
+                  );
                 }
               } else {
                 // Only insert if record doesn't exist
@@ -808,9 +857,13 @@ export async function fetchAndSaveCashSalesDetails(
                     .insert(cashsalesdetailsTable)
                     .values(transformedData);
                   savedCount++;
-                  console.log(`Inserted new detail line - numbering: ${transformedData.numbering}`);
+                  console.log(
+                    `Inserted new detail line - numbering: ${transformedData.numbering}`
+                  );
                 } else {
-                  console.log(`Skipped existing detail line - numbering: ${transformedData.numbering}`);
+                  console.log(
+                    `Skipped existing detail line - numbering: ${transformedData.numbering}`
+                  );
                 }
               }
             } catch (error) {
@@ -834,6 +887,28 @@ export async function fetchAndSaveCashSalesDetails(
       }
     }
 
+    // Record completion status in the database
+    try {
+      await db.insert(fetchCompletionTable).values({
+        operationType: 'cashsales_details',
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        recordsProcessed: cashSales.length.toString(),
+        savedCount: savedCount.toString(),
+        updatedCount: updatedCount.toString(),
+        status: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      console.log(
+        `Completion status recorded for date range ${dateFrom} to ${dateTo}`
+      );
+    } catch (completionError) {
+      console.error('Failed to record completion status:', completionError);
+      // Don't fail the main operation if completion tracking fails
+    }
+
     const message = `Successfully processed ${
       cashSales.length
     } cash sales codes for date range ${dateFrom} to ${dateTo}. Saved: ${savedCount}, Updated: ${updatedCount}${
@@ -848,7 +923,10 @@ export async function fetchAndSaveCashSalesDetails(
       errors: errors.length > 0 ? errors : undefined
     };
   } catch (error) {
-    console.error('Error in fetchAndSaveCashSalesDetailsByDateCompletelyFixed:', error);
+    console.error(
+      'Error in fetchAndSaveCashSalesDetailsByDateCompletelyFixed:',
+      error
+    );
 
     return {
       success: false,
@@ -859,63 +937,16 @@ export async function fetchAndSaveCashSalesDetails(
 }
 
 /**
- * Debug function to test date filtering
- */
-export async function debugDateFiltering(dateFrom: string, dateTo: string) {
-  try {
-    console.log('=== DEBUG DATE FILTERING ===');
-    console.log('Querying for date range:', dateFrom, 'to', dateTo);
-    
-    // Get all dates in database
-    const allDates = await db
-      .select({
-        cashsalesdate: cashsalesTable.cashsalesdate
-      })
-      .from(cashsalesTable)
-      .orderBy(cashsalesTable.cashsalesdate);
-    
-    console.log('Total records in database:', allDates.length);
-    console.log('Sample dates in database:', allDates.slice(0, 10).map(d => d.cashsalesdate));
-    
-    // Test the date range query
-    const filteredDates = await db
-      .select({
-        cashsalescode: cashsalesTable.cashsalescode,
-        cashsalesdate: cashsalesTable.cashsalesdate
-      })
-      .from(cashsalesTable)
-      .where(
-        and(
-          gte(cashsalesTable.cashsalesdate, dateFrom),
-          lte(cashsalesTable.cashsalesdate, dateTo)
-        )
-      )
-      .orderBy(cashsalesTable.cashsalesdate);
-    
-    console.log('Records found in date range:', filteredDates.length);
-    console.log('Sample filtered records:', filteredDates.slice(0, 5));
-    
-    return {
-      totalRecords: allDates.length,
-      filteredRecords: filteredDates.length,
-      sampleDates: allDates.slice(0, 10).map(d => d.cashsalesdate),
-      sampleFiltered: filteredDates.slice(0, 5)
-    };
-  } catch (error) {
-    console.error('Error in debugDateFiltering:', error);
-    return {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-}
-
-/**
  * Verify that multiple detail lines are saved correctly for a cash sales code
  */
-export async function verifyMultipleDetailsForCashSalesCode(cashsalescode: string) {
+export async function verifyMultipleDetailsForCashSalesCode(
+  cashsalescode: string
+) {
   try {
-    console.log(`=== VERIFYING MULTIPLE DETAILS FOR CASH SALES CODE: ${cashsalescode} ===`);
-    
+    console.log(
+      `=== VERIFYING MULTIPLE DETAILS FOR CASH SALES CODE: ${cashsalescode} ===`
+    );
+
     // Get all detail lines for this cash sales code
     const detailLines = await db
       .select({
@@ -930,17 +961,23 @@ export async function verifyMultipleDetailsForCashSalesCode(cashsalescode: strin
       .from(cashsalesdetailsTable)
       .where(eq(cashsalesdetailsTable.cashsalescode, cashsalescode))
       .orderBy(cashsalesdetailsTable.numbering);
-    
-    console.log(`Found ${detailLines.length} detail lines for cash sales code ${cashsalescode}`);
-    
+
+    console.log(
+      `Found ${detailLines.length} detail lines for cash sales code ${cashsalescode}`
+    );
+
     if (detailLines.length > 0) {
       console.log('Detail lines found:');
       detailLines.forEach((line, index) => {
-        console.log(`  ${index + 1}. Numbering: ${line.numbering}, Stock: ${line.stockcode}, Qty: ${line.quantity}, Amount: ${line.amount}`);
+        console.log(
+          `  ${index + 1}. Numbering: ${line.numbering}, Stock: ${
+            line.stockcode
+          }, Qty: ${line.quantity}, Amount: ${line.amount}`
+        );
       });
-      
+
       // Check for duplicate numbering
-      const numberingSet = new Set(detailLines.map(line => line.numbering));
+      const numberingSet = new Set(detailLines.map((line) => line.numbering));
       if (numberingSet.size !== detailLines.length) {
         console.warn('⚠️  WARNING: Duplicate numbering found!');
         return {
@@ -950,7 +987,7 @@ export async function verifyMultipleDetailsForCashSalesCode(cashsalescode: strin
           duplicateNumbering: true
         };
       }
-      
+
       return {
         success: true,
         message: `Successfully verified ${detailLines.length} detail lines for cash sales code ${cashsalescode}`,
@@ -971,8 +1008,88 @@ export async function verifyMultipleDetailsForCashSalesCode(cashsalescode: strin
     console.error('Error verifying multiple details:', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      message:
+        error instanceof Error ? error.message : 'Unknown error occurred',
       error: error
+    };
+  }
+}
+
+/**
+ * Check if a fetch operation has already been completed for a date range
+ */
+export async function checkFetchCompletion(
+  operationType: string,
+  dateFrom: string,
+  dateTo: string
+) {
+  try {
+    const completion = await db
+      .select()
+      .from(fetchCompletionTable)
+      .where(
+        and(
+          eq(fetchCompletionTable.operationType, operationType),
+          eq(fetchCompletionTable.dateFrom, dateFrom),
+          eq(fetchCompletionTable.dateTo, dateTo)
+        )
+      )
+      .limit(1);
+
+    if (completion.length > 0) {
+      return {
+        completed: true,
+        completion: completion[0]
+      };
+    }
+
+    return {
+      completed: false,
+      completion: null
+    };
+  } catch (error) {
+    console.error('Error checking fetch completion:', error);
+    return {
+      completed: false,
+      completion: null,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Clear completion records for a specific operation and date range
+ */
+export async function clearFetchCompletion(
+  operationType: string,
+  dateFrom: string,
+  dateTo: string
+) {
+  try {
+    const result = await db
+      .delete(fetchCompletionTable)
+      .where(
+        and(
+          eq(fetchCompletionTable.operationType, operationType),
+          eq(fetchCompletionTable.dateFrom, dateFrom),
+          eq(fetchCompletionTable.dateTo, dateTo)
+        )
+      )
+      .returning();
+
+    console.log(
+      `Cleared ${result.length} completion records for ${operationType} (${dateFrom} to ${dateTo})`
+    );
+
+    return {
+      success: true,
+      clearedCount: result.length
+    };
+  } catch (error) {
+    console.error('Error clearing fetch completion:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
