@@ -224,7 +224,7 @@ export async function GET(request: NextRequest) {
     // Construct the full URL
     const url = `${API_BASE_URL}?${queryParams.toString()}`;
 
-    console.log('Fetching data from:', url);
+    // console.log('Fetching data from:', url);
 
     // Fetch data from external API
     const response = await fetch(url, {

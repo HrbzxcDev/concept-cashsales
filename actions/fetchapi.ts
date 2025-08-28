@@ -633,7 +633,7 @@ function transformDetailLineToDB(
     unitprice: detailLine.unitPrice || 0,
     discount:
       typeof detailLine.discount === 'string'
-        ? parseFloat(detailLine.discount) || 0
+        ? parseFloat(detailLine.discount.replace(/,/g, '')) || 0
         : detailLine.discount || 0,
     amount: detailLine.amount || 0,
     taxcode: detailLine.taxCode || '',

@@ -17,6 +17,7 @@ import { DailyTransPerLocation } from './dailytransperlocation';
 import { SalesSummary } from './salesummary';
 import FetchActivity from './fetchactivity';
 import { Sparkline } from '@/components/ui/sparkline';
+import { TopSoldItems } from './solditems';
 
 interface OverviewProps {
   totalTransactions: number;
@@ -40,6 +41,10 @@ interface OverviewProps {
     percentage: number;
     yesterdayDate: string;
   };
+  top5ItemsByQuantity: {
+    stockcode: string;
+    totalQuantity: number;
+  }[];
 }
 
 export default function Overview({
@@ -53,7 +58,8 @@ export default function Overview({
   cashsalesData,
   cashsalesDetailsData,
   percentageChangeData,
-  percentageChangeDataItemsQuantity
+  percentageChangeDataItemsQuantity,
+  top5ItemsByQuantity
 }: OverviewProps) {
   // console.log(
   //   '🎯 Overview component received cashsalesDetailsData:',
@@ -362,11 +368,15 @@ export default function Overview({
             <SalesSummary
               netSales={totalNetAmount}
               discount={totalDiscount}
-              netSalesChange={24.5}
-              discountChange={-5.5}
               monthlyData={monthlySalesAndDiscountData}
               weeklyData={weeklySalesAndDiscountData}
             />
+           
+          </div>
+          <div className="lg:col-span-1">
+            <div className="flex flex-col gap-4">
+            <TopSoldItems top5ItemsByQuantity={top5ItemsByQuantity} />
+            </div>
           </div>
         </div>
       </div>

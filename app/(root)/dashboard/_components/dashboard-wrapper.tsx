@@ -14,7 +14,8 @@ import {
   getTotalNetAmount,
   getTotalDiscount,
   getMonthlySalesAndDiscountData,
-  getWeeklySalesAndDiscountData
+  getWeeklySalesAndDiscountData,
+  getTop5ItemsByQuantity
 } from '@/actions/getdata';
 
 interface DashboardData {
@@ -39,6 +40,10 @@ interface DashboardData {
     percentage: number;
     yesterdayDate: string;
   };
+  top5ItemsByQuantity: {
+    stockcode: string;
+    totalQuantity: number;
+  }[];
 }
 
 export default function DashboardWrapper() {
@@ -62,7 +67,8 @@ export default function DashboardWrapper() {
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
-        percentageChangeDataItemsQuantity
+        percentageChangeDataItemsQuantity,
+        top5ItemsByQuantity
       ] = await Promise.all([
         gettotaltrans(),
         gettotalbranch(),
@@ -74,7 +80,8 @@ export default function DashboardWrapper() {
         getCashsalesData(),
         getCashsalesDetailsData(),
         getPercentageChangeTotalTransaction(),
-        getPercentageChangeTotalItemsQuantity()
+        getPercentageChangeTotalItemsQuantity(),
+        getTop5ItemsByQuantity()
       ]);
 
       setData({
@@ -88,19 +95,20 @@ export default function DashboardWrapper() {
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
-        percentageChangeDataItemsQuantity
+        percentageChangeDataItemsQuantity,
+        top5ItemsByQuantity
       });
 
-      console.log('✅ Dashboard data updated successfully');
-      console.log(
-        '📊 cashsalesDetailsData length:',
-        cashsalesDetailsData?.length || 0
-      );
-      console.log(
-        '📊 cashsalesDetailsData sample:',
-        cashsalesDetailsData?.slice(0, 3)
-      );
-      console.log('📊 totalItemsQuantity:', totalItemsQuantity);
+      // console.log('✅ Dashboard data updated successfully');
+      // console.log(
+      //   '📊 cashsalesDetailsData length:',
+      //   cashsalesDetailsData?.length || 0
+      // );
+      // console.log(
+      //   '📊 cashsalesDetailsData sample:',
+      //   cashsalesDetailsData?.slice(0, 3)
+      // );
+      // console.log('📊 totalItemsQuantity:', totalItemsQuantity);
     } catch (error) {
       console.error('❌ Error fetching Dashboard Data:', error);
     } finally {
@@ -154,6 +162,7 @@ export default function DashboardWrapper() {
           percentageChangeDataItemsQuantity={
             data.percentageChangeDataItemsQuantity
           }
+          top5ItemsByQuantity={data.top5ItemsByQuantity}
         />
       </div>
     );
@@ -182,6 +191,7 @@ export default function DashboardWrapper() {
       cashsalesDetailsData={data.cashsalesDetailsData}
       percentageChangeData={data.percentageChangeData}
       percentageChangeDataItemsQuantity={data.percentageChangeDataItemsQuantity}
+      top5ItemsByQuantity={data.top5ItemsByQuantity}
     />
   );
 }

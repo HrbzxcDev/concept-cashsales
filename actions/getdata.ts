@@ -61,7 +61,7 @@ export async function getCashsalesData() {
 
 export async function getCashsalesDetailsData() {
   try {
-    console.log('🔍 Fetching cashsales details data from database...');
+    // console.log('🔍 Fetching cashsales details data from database...');
     const result = await db
       .select({
         cashsalesdate: cashsalesdetailsTable.cashsalesdate,
@@ -70,29 +70,29 @@ export async function getCashsalesDetailsData() {
       .from(cashsalesdetailsTable)
       .orderBy(desc(cashsalesdetailsTable.cashsalesdate));
 
-    console.log('📊 Database result length:', result?.length || 0);
-    console.log('📊 Database result sample:', result?.slice(0, 3));
-    console.log(
-      '📊 Total quantity sum:',
-      result?.reduce((sum, row) => sum + Number(row.quantity || 0), 0) || 0
-    );
+    // console.log('📊 Database result length:', result?.length || 0);
+    // console.log('📊 Database result sample:', result?.slice(0, 3));
+    // console.log(
+    //   '📊 Total quantity sum:',
+    //   result?.reduce((sum, row) => sum + Number(row.quantity || 0), 0) || 0
+    // );
 
     // Check for unique dates
-    const uniqueDates = new Set(
-      result?.map((row) => row.cashsalesdate?.toString()) || []
-    );
-    console.log('📅 Unique dates in database:', Array.from(uniqueDates).sort());
-    console.log('📅 Number of unique dates:', uniqueDates.size);
+    // const uniqueDates = new Set(
+    //   result?.map((row) => row.cashsalesdate?.toString()) || []
+    // );
+    // console.log('📅 Unique dates in database:', Array.from(uniqueDates).sort());
+    // console.log('📅 Number of unique dates:', uniqueDates.size);
 
     // Check quantity distribution
-    const quantities = result?.map((row) => Number(row.quantity || 0)) || [];
-    console.log('📊 Quantity distribution:', {
-      min: Math.min(...quantities),
-      max: Math.max(...quantities),
-      avg: Math.round(
-        quantities.reduce((sum, qty) => sum + qty, 0) / quantities.length
-      )
-    });
+    // const quantities = result?.map((row) => Number(row.quantity || 0)) || [];
+    // console.log('📊 Quantity distribution:', {
+    //   min: Math.min(...quantities),
+    //   max: Math.max(...quantities),
+    //   avg: Math.round(
+    //     quantities.reduce((sum, qty) => sum + qty, 0) / quantities.length
+    //   )
+    // });
 
     return result;
   } catch (error) {
@@ -203,9 +203,9 @@ export async function getPercentageChangeTotalItemsQuantity() {
 
     // Calculate percentage
     const percentage = totalCount > 0 ? (yesterdayCount / totalCount) * 100 : 0;
-    console.log('totalCount', totalCount);
-    console.log('yesterdayCount', yesterdayCount);
-    console.log('percentage', percentage);
+    // console.log('totalCount', totalCount);
+    // console.log('yesterdayCount', yesterdayCount);
+    // console.log('percentage', percentage);
 
     return {
       totalItemsQuantity: totalCount,
@@ -312,7 +312,10 @@ export async function getMonthlySalesAndDiscountData() {
         discount: sum(cashsalesdetailsTable.discount)
       })
       .from(cashsalesdetailsTable)
-      .groupBy(sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`, sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`)
+      .groupBy(
+        sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
+        sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`
+      )
       .orderBy(sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`);
 
     return result.map((row) => ({
@@ -336,7 +339,7 @@ export async function getWeeklySalesAndDiscountData() {
       .from(cashsalesdetailsTable)
       .limit(5);
 
-    console.log('📅 Sample dates from database:', sampleDates);
+    // console.log('📅 Sample dates from database:', sampleDates);
 
     // Get weekly data with date range formatting
     const result = await db
@@ -350,16 +353,22 @@ export async function getWeeklySalesAndDiscountData() {
       .groupBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`)
       .orderBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`);
 
-    console.log('📊 Weekly data result:', result);
+    // console.log('📊 Weekly data result:', result);
 
     return result.map((row) => {
       // Format the date range as MM/DD-MM/DD
       const startDate = new Date(row.weekStart);
       const endDate = new Date(row.weekEnd);
-      
-      const startFormatted = `${String(startDate.getMonth() + 1).padStart(2, '0')}/${String(startDate.getDate()).padStart(2, '0')}`;
-      const endFormatted = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
-      
+
+      const startFormatted = `${String(startDate.getMonth() + 1).padStart(
+        2,
+        '0'
+      )}/${String(startDate.getDate()).padStart(2, '0')}`;
+      const endFormatted = `${String(endDate.getMonth() + 1).padStart(
+        2,
+        '0'
+      )}/${String(endDate.getDate()).padStart(2, '0')}`;
+
       return {
         week: `${startFormatted}-${endFormatted}`,
         netSales: Number(row.netSales) || 0,
@@ -368,7 +377,7 @@ export async function getWeeklySalesAndDiscountData() {
     });
   } catch (error) {
     console.error('Error getting weekly sales and discount data:', error);
-    
+
     // Fallback: try with a different approach for databases that don't support DATE_TRUNC
     try {
       const fallbackResult = await db
@@ -379,19 +388,29 @@ export async function getWeeklySalesAndDiscountData() {
           discount: sum(cashsalesdetailsTable.discount)
         })
         .from(cashsalesdetailsTable)
-        .groupBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`)
-        .orderBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`);
+        .groupBy(
+          sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`
+        )
+        .orderBy(
+          sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`
+        );
 
-      console.log('📊 Weekly data fallback result:', fallbackResult);
+      // console.log('📊 Weekly data fallback result:', fallbackResult);
 
       return fallbackResult.map((row) => {
         // Format the date range as MM/DD-MM/DD
         const startDate = new Date(row.weekStart);
         const endDate = new Date(row.weekEnd);
-        
-        const startFormatted = `${String(startDate.getMonth() + 1).padStart(2, '0')}/${String(startDate.getDate()).padStart(2, '0')}`;
-        const endFormatted = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
-        
+
+        const startFormatted = `${String(startDate.getMonth() + 1).padStart(
+          2,
+          '0'
+        )}/${String(startDate.getDate()).padStart(2, '0')}`;
+        const endFormatted = `${String(endDate.getMonth() + 1).padStart(
+          2,
+          '0'
+        )}/${String(endDate.getDate()).padStart(2, '0')}`;
+
         return {
           week: `${startFormatted}-${endFormatted}`,
           netSales: Number(row.netSales) || 0,
@@ -402,5 +421,27 @@ export async function getWeeklySalesAndDiscountData() {
       console.error('Error in fallback weekly data query:', fallbackError);
       return [];
     }
+  }
+}
+
+export async function getTop5ItemsByQuantity() {
+  try {
+    const result = await db
+      .select({
+        stockcode: cashsalesdetailsTable.stockcode,
+        totalQuantity: sum(cashsalesdetailsTable.quantity)
+      })
+      .from(cashsalesdetailsTable)
+      .groupBy(cashsalesdetailsTable.stockcode)
+      .orderBy(desc(sum(cashsalesdetailsTable.quantity)))
+      .limit(5);
+
+    return result.map((item) => ({
+      stockcode: item.stockcode,
+      totalQuantity: Number(item.totalQuantity || 0)
+    }));
+  } catch (error) {
+    console.error('❌ Error getting top 5 items by quantity:', error);
+    return [];
   }
 }

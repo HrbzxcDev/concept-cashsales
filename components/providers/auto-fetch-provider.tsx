@@ -92,6 +92,12 @@ export function AutoFetchProvider({
               '🔄 Triggering component refresh due to data changes...'
             );
             triggerRefresh();
+
+            // Refresh the window after successful data fetch
+            console.log('🔄 Refreshing window after successful data fetch...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000); // 1 second delay to allow for any pending operations
           }
         }
       } else {

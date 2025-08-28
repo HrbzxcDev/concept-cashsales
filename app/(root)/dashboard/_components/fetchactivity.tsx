@@ -20,7 +20,8 @@ import {
   XCircle,
   GitPullRequestCreateArrow,
   Clock,
-  GitBranchPlus
+  GitBranchPlus,
+  Loader2
 } from 'lucide-react';
 
 type ActivityItem = {
@@ -103,12 +104,28 @@ export default function FetchActivity() {
         'Manual Fetch'
       )}&forceDetails=true`;
       const res = await fetch(url, { method: 'GET' });
-      // Ignore response body; refresh activity list regardless
-      await new Promise((r) => setTimeout(r, 300));
-      const rows = await getRecentApiFetches();
-      setActivities(rows as ActivityItem[]);
-      setManualOpen(false);
+
+      // Check if the fetch was successful
+      if (res.ok) {
+        const result = await res.json();
+        console.log('✅ Manual fetch completed successfully:', result.message);
+
+        // Refresh activity list
+        await new Promise((r) => setTimeout(r, 300));
+        const rows = await getRecentApiFetches();
+        setActivities(rows as ActivityItem[]);
+        setManualOpen(false);
+
+        // Refresh the window after successful manual fetch
+        console.log('🔄 Refreshing window after successful manual fetch...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000); // 1 second delay to allow for any pending operations
+      } else {
+        console.error('❌ Manual fetch failed:', res.status, res.statusText);
+      }
     } catch (e) {
+      console.error('❌ Error during manual fetch:', e);
       // swallow for now; activities will still show previous state
     } finally {
       setSubmitting(false);
@@ -218,7 +235,14 @@ export default function FetchActivity() {
               onClick={handleManualFetch}
               disabled={submitting || !dateRange?.from}
             >
-              {submitting ? 'Fetching Data…' : 'Fetch Data'}
+              {submitting ? (
+                <>
+                  Fetching Data...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                'Fetch Data'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
