@@ -126,7 +126,7 @@ export function TransPerLocation() {
                 dataKey="count"
                 fill="var(--color-count)"
                 radius={[4, 4, 0, 0]}
-                barSize={80}
+                barSize={50}
               />
             </BarChart>
           </ChartContainer>

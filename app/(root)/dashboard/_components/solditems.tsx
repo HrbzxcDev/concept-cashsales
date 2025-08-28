@@ -91,6 +91,7 @@ export function TopSoldItems({ top5ItemsByQuantity }: TopSoldItemsProps) {
               layout="vertical"
               fill="hsl(var(--chart-1))"
               radius={4}
+              barSize={30}
             >
               {/* <LabelList
                 dataKey="stockcode"

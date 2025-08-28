@@ -292,8 +292,8 @@ export function SalesSummary({
                   cursor={false}
                   content={<ChartTooltipContent indicator="dashed" />}
                 />
-                <Bar dataKey="netSales" fill="hsl(var(--chart-1))" radius={4} />
-                <Bar dataKey="discount" fill="hsl(var(--chart-2))" radius={4} />
+                <Bar dataKey="netSales" fill="hsl(var(--chart-1))" radius={4} barSize={50}/>
+                <Bar dataKey="discount" fill="hsl(var(--chart-2))" radius={4} barSize={50}/>
               </BarChart>
             </ChartContainer>
           ) : (

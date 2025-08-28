@@ -10,8 +10,8 @@ import {
   Percent,
   PackageCheck
 } from 'lucide-react';
-import { DataTable } from '@/app/(root)/cashsales-table/_components/cashsales-tables/data-table';
-import { Cashsalescolumns } from '@/app/(root)/cashsales-table/_components/cashsales-tables/columns';
+import { DataTable } from '@/app/(root)/cashsales-table/data-table';
+import { Cashsalescolumns } from '@/app/(root)/cashsales-table/columns';
 import { TransPerLocation } from './transperlocation';
 import { DailyTransPerLocation } from './dailytransperlocation';
 import { SalesSummary } from './salesummary';

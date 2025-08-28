@@ -35,7 +35,8 @@ import {
   Wallet,
   OctagonAlert,
   BadgeDollarSign,
-  PanelLeft
+  PanelLeft,
+  ListCollapse
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -74,6 +75,7 @@ export const Icons = {
   octagon: OctagonAlert,
   servicecharge: BadgeDollarSign,
   PanelLeft: PanelLeft,
+  listCollapse: ListCollapse,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
