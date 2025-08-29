@@ -40,7 +40,8 @@ import {
   Check,
   MapPinHouse,
   Hash,
-  Braces
+  Braces,
+  Unplug
 } from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Card } from '@/components/ui/card';
 import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
@@ -651,9 +653,19 @@ export function DataTable<TData, TValue>({
               </div>
             </div>
           )}
-          {detailError && (
-            <div className="py-6 text-lg text-center text-red-500">{detailError}</div>
-          )}
+           {detailError && (
+             <div className="py-6 mb-4 text-center">
+               <div className="text-lg text-red-500 mb-4">
+                 {detailError}
+               </div>
+               <div className="flex flex-col items-center justify-center gap-4 text-white">
+               <Unplug className="h-24 w-24" 
+                 strokeWidth={1}
+                 />
+                 <span>Can't Retrieve Data From The Server!</span>
+               </div>
+             </div>
+           )}
           {!detailLoading && !detailError && detail && (
             <div className="space-y-6">
               <SummaryTable data={detail} />

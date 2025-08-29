@@ -445,3 +445,39 @@ export async function getTop5ItemsByQuantity() {
     return [];
   }
 }
+
+export interface CashSalesDetailsData {
+  totalCount: number;
+  data: any[];
+}
+
+export async function getCashSalesDetailsDataWithCount(): Promise<CashSalesDetailsData> {
+  let totalCashSalesDetails = 0;
+  let cashsalesdetailsData: any[] = [];
+
+  try {
+    // First, get a count of all rows
+    const countResult = await db
+      .select({ count: count() })
+      .from(cashsalesdetailsTable);
+    totalCashSalesDetails = Number(countResult[0]?.count || 0);
+
+    // Then fetch all rows
+    cashsalesdetailsData = await db
+      .select()
+      .from(cashsalesdetailsTable)
+      .orderBy(
+        desc(cashsalesdetailsTable.cashsalesdate),
+        asc(cashsalesdetailsTable.cashsalescode),
+        asc(cashsalesdetailsTable.numbering)
+      );
+  } catch (error) {
+    console.error('Error fetching cash sales details:', error);
+    throw new Error('Failed to fetch cash sales details data');
+  }
+
+  return {
+    totalCount: totalCashSalesDetails,
+    data: cashsalesdetailsData
+  };
+}

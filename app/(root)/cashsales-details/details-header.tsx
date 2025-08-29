@@ -1,36 +1,26 @@
 import PageContainer from '@/components/layout/page-container';
 // import { Heading } from '@/components/ui/heading';
 import { Separator } from '@/components/ui/separator';
-import { db } from '@/utils/db/drizzle'; // Import your Drizzle connection
-import { cashsalesdetailsTable } from '@/utils/db/schema'; // Import your cashsalesdetails schema
 import { cn } from '@/lib/utils';
 import { DataTable } from './data-table'; // Ensure this path is correct
 import { CashsalesdetailsColumns } from './columns';
-import { sql } from 'drizzle-orm';
-import { toast } from '@/hooks/use-toast';
+import { getCashSalesDetailsDataWithCount } from '@/actions/getdata';
 // import AddButton from '@/components/animata/button/add-button';
 
 type CashSalesDetailsListingPageProps = {};
 
 export default async function CashSalesDetailsListingPage({}: CashSalesDetailsListingPageProps) {
-  //* Fetching loans directly from the database using Drizzle
+  //* Fetching cash sales details using the getdata function
   let totalCashSalesDetails = 0;
   let cashsalesdetailsData: any[] = [];
 
   try {
-    //* First, get a count of all rows
-    const countResult = await db
-      .select({ count: sql`count(*)` })
-        .from(cashsalesdetailsTable);
-    totalCashSalesDetails = Number(countResult[0].count); //* Assign to totalCashSalesDetails
-
-    //* Then fetch all rows
-    cashsalesdetailsData = await db.select().from(cashsalesdetailsTable); //* Adjust the column name if needed
+    const { totalCount, data } = await getCashSalesDetailsDataWithCount();
+    totalCashSalesDetails = totalCount;
+    cashsalesdetailsData = data;
   } catch (error) {
-    toast({
-      title: 'Error',
-      description: 'Error Fetching Loans Record'
-    });
+    console.error('Error fetching cash sales details:', error);
+    // Handle error appropriately - you might want to show a toast or error message
   }
 
   return (

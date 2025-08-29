@@ -72,6 +72,7 @@ export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
   {
     accessorKey: 'cashsalesdate',
     header: () => <div className="text-left">CashSales Date</div>,
+    // size: 140,
     cell: ({ row }) => {
       const date = new Date(row.getValue('cashsalesdate'));
       return date.toLocaleDateString('en-PH', {
@@ -83,39 +84,74 @@ export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
   },
   {
     accessorKey: 'cashsalescode',
-    header: () => <div className="text-left">CashSales Code</div>
+    header: () => <div className="text-left">CashSales Code</div>,
+    size: 150
   },
   {
     accessorKey: 'numbering',
-    header: () => <div className="text-left">Numbering</div>
+    header: () => <div className="text-left">Numbering</div>,
+    size: 100,
+    cell: ({ row }) => {
+      const numbering = row.getValue('numbering') as string;
+      return <div className="text-center font-medium">{numbering}</div>;
+    }
   },
   {
     accessorKey: 'stockcode',
-    header: () => <div className="text-left">Stock Code</div>
+    header: () => <div className="text-left">Stock Code</div>,
+    size: 120
   },
   {
     accessorKey: 'description',
-    header: () => <div className="text-left">Description</div>
+    header: () => <div className="text-center">Description</div>,
+    size: 200 
   },
   {
     accessorKey: 'quantity',
-    header: () => <div className="text-left">Quantity</div>
+    header: () => <div className="text-left">Quantity</div>,
+    size: 100,
+    cell: ({ row }) => {
+      const quantity = row.getValue('quantity') as string;
+      return <div className="text-center font-medium">{quantity}</div>;
+    }
   },
   {
     accessorKey: 'uom',
-    header: () => <div className="text-left">UOM</div>
+    header: () => <div className="text-left">UOM</div>,
+    size: 80
   },
   {
     accessorKey: 'unitprice',
-    header: () => <div className="text-left">Unit Price</div>
+    header: () => <div className="text-left">Unit Price</div>,
+    size: 120,
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue('unitprice'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP'
+      }).format(amount);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    }
   },
   {
     accessorKey: 'discount',
-    header: () => <div className="text-left">Discount</div>
+    header: () => <div className="text-left">Discount</div>,
+    size: 120,
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue('discount'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP'
+      }).format(amount);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    }
   },
   {
     accessorKey: 'amount',
     header: () => <div className="text-left">Amount</div>,
+    size: 120,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('amount'));
       const formatted = new Intl.NumberFormat('en-US', {
@@ -128,20 +164,41 @@ export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
   },
   {
     accessorKey: 'taxcode',
-    header: () => <div className="text-left">Tax Code</div>
+    header: () => <div className="text-left">Tax Code</div>,
+    size: 100
   },
   {
     accessorKey: 'taxamount',
-    header: () => <div className="text-left">Tax Amount</div>
+    header: () => <div className="text-left">Tax Amount</div>,
+    size: 120,
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue('taxamount'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP'
+      }).format(amount);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    }
   },
   {
     accessorKey: 'netamount',
-    header: () => <div className="text-left">Net Amount</div>
+    header: () => <div className="text-left">Net Amount</div>,
+    size: 120,
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue('netamount'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP'
+      }).format(amount);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    }
   },
-  {
-    accessorKey: 'glaccount',
-    header: () => <div className="text-left">GL Account</div>
-  },
+  // {
+  //   accessorKey: 'glaccount',
+  //   header: () => <div className="text-left">GL Account</div>
+  // },
   // {
   //   id: 'actions',
   //   cell: ({ row }) => <CellAction data={row.original} />
