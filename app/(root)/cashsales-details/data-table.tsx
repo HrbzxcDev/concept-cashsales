@@ -41,7 +41,8 @@ import {
   MapPinHouse,
   Hash,
   Braces,
-  Unplug
+  Unplug,
+  ShoppingBasket
 } from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,7 @@ import type {
 } from '@/actions/cashsales-client';
 import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
 import { Card } from '@/components/ui/card';
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -89,7 +91,7 @@ export function DataTable<TData, TValue>({
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
   const [filterType, setFilterType] = React.useState<
-    'all' | 'cashsalescode' | 'stocklocation'
+    'all' | 'cashsalescode' | 'stocklocation' | 'description'
   >('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = React.useState(false);
   const filterDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -134,6 +136,10 @@ export function DataTable<TData, TValue>({
             .includes(searchLower);
         } else if (filterType === 'stocklocation') {
           return (item as any).stocklocation
+            .toLowerCase()
+            .includes(searchLower);
+        } else if (filterType === 'description') {
+          return (item as any).description
             .toLowerCase()
             .includes(searchLower);
         } else {
@@ -419,6 +425,21 @@ export function DataTable<TData, TValue>({
                       <Check className="h-4 w-4" />
                     )}
                   </button>
+                  <button
+                    onClick={() => {
+                      setFilterType('description');
+                      setFilterDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="flex items-center gap-2">
+                    <ShoppingBasket  className="h-4 w-4 text-muted-foreground" />
+                      <span>Description</span>
+                    </div>
+                    {filterType === 'description' && (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
             )}
@@ -430,10 +451,14 @@ export function DataTable<TData, TValue>({
             <Input
               placeholder={
                 filterType === 'all'
-                  ? 'CashSalesCode or Stock Location...'
+                  ? 'CashSalesCode or Stock Location or Description...'
                   : filterType === 'cashsalescode'
                   ? 'Search CashSales Code...'
-                  : 'Search Stock Location...'
+                  : filterType === 'stocklocation'
+                  ? 'Search Stock Location...'
+                  : filterType === 'description'
+                  ? 'Search Description...'
+                  : 'Search CashSales Code or Stock Location...'
               }
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
