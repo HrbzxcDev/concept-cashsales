@@ -217,6 +217,24 @@ export default function Overview({
     return base.map((d) => ({ ...d, value }));
   }
 
+  // Function to get today's total transactions
+  function getTodayTransactions() {
+    const today = new Date();
+    const todayKey = today.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    
+    let todayCount = 0;
+    for (const row of cashsalesData || []) {
+      if (!row?.cashsalesdate) continue;
+      const rowDate = new Date(row.cashsalesdate);
+      const rowKey = rowDate.toISOString().split('T')[0];
+      
+      if (rowKey === todayKey) {
+        todayCount++;
+      }
+    }
+    return todayCount;
+  }
+
   return (
     <PageContainer scrollable>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -271,9 +289,18 @@ export default function Overview({
             <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
               <Badge
                 variant="outline"
-                className="border-[#3b82f6]/0 bg-[#3b82f6]/10 text-[#3b82f6] hover:bg-[#3b82f6]/10"
+                className={
+                  getTodayTransactions() >= percentageChangeData.yesterdayTransactions
+                    ? 'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/10'
+                    : 'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/10'
+                }
               >
-                {formatDate(percentageChangeData.yesterdayDate)}
+                {getTodayTransactions() >= percentageChangeData.yesterdayTransactions ? (
+                  <TrendingUp className="mr-1 h-4 w-4" />
+                ) : (
+                  <TrendingDown className="mr-1 h-4 w-4" />
+                )}
+                {getTodayTransactions()} transactions today
               </Badge>
             </div>
           </CardContent>

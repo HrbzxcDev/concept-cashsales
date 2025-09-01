@@ -1,11 +1,9 @@
 import PageContainer from '@/components/layout/page-container';
-// import { Heading } from '@/components/ui/heading';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { DataTable } from './data-table'; // Ensure this path is correct
+import { DataTable } from './data-table';
 import { CashsalesdetailsColumns } from './columns';
 import { getCashSalesDetailsDataWithCount } from '@/actions/getdata';
-// import AddButton from '@/components/animata/button/add-button';
 
 type CashSalesDetailsListingPageProps = {};
 
@@ -27,14 +25,6 @@ export default async function CashSalesDetailsListingPage({}: CashSalesDetailsLi
     <PageContainer scrollable>
       <div className="space-y-4">
         <div className="flex place-items-end justify-between">
-          {/* <Heading
-            title={`Cash Sales Details ( ${totalCashSalesDetails} )`}
-            description="Manage cash sales details"
-          />
-          <AddButton
-            href="/cashsales-details/new"
-            text="Add Cash Sales Details"
-          /> */}
         </div>
         <Separator
           className={cn(

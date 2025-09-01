@@ -59,8 +59,7 @@ import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
 } from '@/actions/cashsales-client';
-import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
-import { Card } from '@/components/ui/card';
+import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client'; 
 
 
 interface DataTableProps<TData, TValue> {
@@ -146,7 +145,8 @@ export function DataTable<TData, TValue>({
           // Search in both fields when filter type is 'all'
           return (
             (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
-            (item as any).stocklocation.toLowerCase().includes(searchLower)
+            (item as any).stocklocation.toLowerCase().includes(searchLower) ||
+            (item as any).description.toLowerCase().includes(searchLower)
           );
         }
       })
@@ -360,90 +360,6 @@ export function DataTable<TData, TValue>({
             date={dateRange}
             onDateChange={setDateRange}
           />
-        </div>
-
-        <div className="w-full min-w-0" ref={filterDropdownRef}>
-          <div className="relative">
-            <button
-              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  {filterType === 'all' && 'All Fields'}
-                  {filterType === 'cashsalescode' && 'CashSales Code'}
-                  {filterType === 'stocklocation' && 'Stock Location'}
-                </span>
-              </div>
-              <ChevronRightIcon className="h-4 w-4 rotate-90 text-muted-foreground" />
-            </button>
-
-            {filterDropdownOpen && (
-              <div className="absolute top-full z-50 mt-2 w-full rounded-md border bg-popover shadow-md">
-                <div className="p-1">
-                  <button
-                    onClick={() => {
-                      setFilterType('all');
-                      setFilterDropdownOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-muted-foreground" />
-                      <span>All Fields</span>
-                    </div>
-                    {filterType === 'all' && <Check className="h-4 w-4" />}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilterType('cashsalescode');
-                      setFilterDropdownOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <div className="flex items-center gap-2">
-                       <Hash  className="h-4 w-4 text-muted-foreground" />
-                      <span>CashSales Code</span>
-                    </div>
-                    {filterType === 'cashsalescode' && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilterType('stocklocation');
-                      setFilterDropdownOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <div className="flex items-center gap-2">
-                    <MapPinHouse  className="h-4 w-4 text-muted-foreground" />
-                      <span>Stock Location</span>
-                    </div>
-                    {filterType === 'stocklocation' && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilterType('description');
-                      setFilterDropdownOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <div className="flex items-center gap-2">
-                    <ShoppingBasket  className="h-4 w-4 text-muted-foreground" />
-                      <span>Description</span>
-                    </div>
-                    {filterType === 'description' && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
         <div className="w-full min-w-0">
           <div className="relative w-full">
