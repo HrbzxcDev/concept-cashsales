@@ -142,30 +142,35 @@ export function SalesSummary({
   netSales,
   discount,
   monthlyData,
-  weeklyData
+  weeklyData,
+  dailyData 
 }: {
   netSales?: number;
   discount?: number;
-  monthlyData?: any[];
+  dailyData?: any[];
   weeklyData?: any[];
+  monthlyData?: any[];
+
 }) {
-  const [timeFilter, setTimeFilter] = useState('week');
+  const [timeFilter, setTimeFilter] = useState('daily');
 
   // Debug logging
   // console.log('📊 SalesSummary - timeFilter:', timeFilter);
-  // console.log('📊 SalesSummary - monthlyData:', monthlyData);
+  // console.log('📊 SalesSummary - dailyData:', dailyData);
   // console.log('📊 SalesSummary - weeklyData:', weeklyData);
+  // console.log('📊 SalesSummary - monthlyData:', monthlyData);
 
   // Use the appropriate data based on the filter
   const chartData = useMemo(() => {
-    return timeFilter === 'week'
-      ? weeklyData && weeklyData?.length > 0
-        ? weeklyData
-        : []
-      : monthlyData && monthlyData?.length > 0
-      ? monthlyData
-      : [];
-  }, [timeFilter, weeklyData, monthlyData]);
+    if (timeFilter === 'daily') {
+      return dailyData && dailyData.length > 0 ? dailyData : [];
+    } else if (timeFilter === 'week') {
+      return weeklyData && weeklyData.length > 0 ? weeklyData : [];
+    } else if (timeFilter === 'month') {
+      return monthlyData && monthlyData.length > 0 ? monthlyData : [];
+    }
+    return [];
+  }, [timeFilter, dailyData, weeklyData, monthlyData]);
 
   // console.log('📊 SalesSummary - chartData:', chartData);
 
@@ -196,8 +201,10 @@ export function SalesSummary({
   };
 
   const filterOptions = [
-    { label: 'Month', value: 'month' },
-    { label: 'Week', value: 'week' }
+    { label: 'Daily', value: 'daily' },
+    { label: 'Weekly', value: 'week' },
+    { label: 'Monthly', value: 'month' },
+  
   ];
 
   return (
@@ -280,12 +287,12 @@ export function SalesSummary({
               <BarChart accessibilityLayer data={chartData}>
                 <CartesianGrid vertical={false} />
                 <XAxis
-                  dataKey={timeFilter === 'week' ? 'week' : 'month'}
+                  dataKey={timeFilter === 'daily' ? 'date' : timeFilter === 'week' ? 'week' : 'month'}
                   tickLine={false}
                   tickMargin={10}
                   axisLine={false}
                   tickFormatter={(value: string) =>
-                    timeFilter === 'week' ? value : value.slice(0, 3)
+                    timeFilter === 'daily' ? value : timeFilter === 'week' ? value : value.slice(0, 3)
                   }
                 />
                 <ChartTooltip

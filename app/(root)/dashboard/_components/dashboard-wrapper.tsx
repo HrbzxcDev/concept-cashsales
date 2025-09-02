@@ -15,6 +15,7 @@ import {
   getTotalDiscount,
   getMonthlySalesAndDiscountData,
   getWeeklySalesAndDiscountData,
+  getDailySalesAndDiscountData,
   getTop5ItemsByQuantity
 } from '@/actions/getdata';
 
@@ -26,6 +27,7 @@ interface DashboardData {
   totalDiscount: number;
   monthlySalesAndDiscountData: any[];
   weeklySalesAndDiscountData: any[];
+  dailySalesAndDiscountData: any[];
   cashsalesData: any[];
   cashsalesDetailsData: any[];
   percentageChangeData: {
@@ -64,6 +66,7 @@ export default function DashboardWrapper() {
         totalDiscount,
         monthlySalesAndDiscountData,
         weeklySalesAndDiscountData,
+        dailySalesAndDiscountData,
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
@@ -77,6 +80,7 @@ export default function DashboardWrapper() {
         getTotalDiscount(),
         getMonthlySalesAndDiscountData(),
         getWeeklySalesAndDiscountData(),
+        getDailySalesAndDiscountData(),
         getCashsalesData(),
         getCashsalesDetailsData(),
         getPercentageChangeTotalTransaction(),
@@ -92,6 +96,7 @@ export default function DashboardWrapper() {
         totalDiscount,
         monthlySalesAndDiscountData,
         weeklySalesAndDiscountData,
+        dailySalesAndDiscountData,
         cashsalesData,
         cashsalesDetailsData,
         percentageChangeData,
@@ -154,8 +159,9 @@ export default function DashboardWrapper() {
           totalItemsQuantity={data.totalItemsQuantity}
           totalNetAmount={data.totalNetAmount}
           totalDiscount={data.totalDiscount}
-          monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
+          monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}  
           weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
+          dailySalesAndDiscountData={data.dailySalesAndDiscountData}
           cashsalesData={data.cashsalesData}
           cashsalesDetailsData={data.cashsalesDetailsData}
           percentageChangeData={data.percentageChangeData}
@@ -171,27 +177,29 @@ export default function DashboardWrapper() {
   if (!data) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Failed to Load Dashboard Data</p>
+        <div className="text-center gap-2 flex flex-col">
+          <p className="text-muted-foreground">Failed to Load Dashboard Data...</p>
+          <p className="text-muted-foreground">Please Try Again Later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <OverViewPage
-      totalTransactions={data.totalTransactions}
-      totalBranch={data.totalBranch}
-      totalItemsQuantity={data.totalItemsQuantity}
-      totalNetAmount={data.totalNetAmount}
-      totalDiscount={data.totalDiscount}
-      monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
-      weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
-      cashsalesData={data.cashsalesData}
-      cashsalesDetailsData={data.cashsalesDetailsData}
-      percentageChangeData={data.percentageChangeData}
-      percentageChangeDataItemsQuantity={data.percentageChangeDataItemsQuantity}
-      top5ItemsByQuantity={data.top5ItemsByQuantity}
-    />
+            <OverViewPage
+          totalTransactions={data.totalTransactions}
+          totalBranch={data.totalBranch}
+          totalItemsQuantity={data.totalItemsQuantity}
+          totalNetAmount={data.totalNetAmount}
+          totalDiscount={data.totalDiscount}
+          monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
+          weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
+          dailySalesAndDiscountData={data.dailySalesAndDiscountData}
+          cashsalesData={data.cashsalesData}
+          cashsalesDetailsData={data.cashsalesDetailsData}
+          percentageChangeData={data.percentageChangeData}
+          percentageChangeDataItemsQuantity={data.percentageChangeDataItemsQuantity}
+          top5ItemsByQuantity={data.top5ItemsByQuantity}
+        />
   );
 }

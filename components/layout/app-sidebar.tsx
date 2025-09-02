@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -29,13 +30,14 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
-import { ChevronRight, ChevronsUpDown } from 'lucide-react';
+import { ChevronRight, ChevronsUpDown, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
-import SearchInput from '../ui/search-input';
+// Removed SearchInput per request
+import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
 import ThemeToggle from './ThemeToggle/theme-toggle';
 
 export const company = {
@@ -58,6 +60,7 @@ export default function AppSidebar({
   // const AppSidebar = async ({ children }: { children: ReactNode }) => {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
+  const { isFetching } = useAutoFetch();
   // Only render after first client-side mount
   React.useEffect(() => {
     setMounted(true);
@@ -229,9 +232,17 @@ export default function AppSidebar({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumbs />
           </div>
-          <div className=" hidden w-1/3 items-center gap-2 px-4 md:flex ">
-            <SearchInput />
-          </div>
+          {isFetching ? (
+            <div className="hidden items-center gap-2 px-4 md:flex ">
+              <Badge
+                variant="outline"
+                className="border-primary/20 bg-primary/10 text-primary pt-2 pb-2 pl-4 pr-4"
+              >
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Fetching Data...
+              </Badge>
+            </div>
+          ) : null}
           <div className="flex items-center gap-2 px-4">
             <ThemeToggle />
           </div>

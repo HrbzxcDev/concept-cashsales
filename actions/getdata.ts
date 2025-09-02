@@ -302,45 +302,41 @@ export async function getTotalDiscount() {
   }
 }
 
-export async function getMonthlySalesAndDiscountData() {
+export async function getDailySalesAndDiscountData() {
   try {
+    // Fetch sums grouped by date for the last 7 days including today
     const result = await db
       .select({
-        month: sql<string>`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
-        monthNumber: sql<number>`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`,
+        date: sql<string>`DATE(${cashsalesdetailsTable.cashsalesdate})`,
         netSales: sum(cashsalesdetailsTable.netamount),
         discount: sum(cashsalesdetailsTable.discount)
       })
       .from(cashsalesdetailsTable)
-      .groupBy(
-        sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
-        sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`
+      .where(
+        sql`DATE(${cashsalesdetailsTable.cashsalesdate}) BETWEEN CURRENT_DATE - INTERVAL '6 day' AND CURRENT_DATE`
       )
-      .orderBy(sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`);
+      .groupBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate})`)
+      .orderBy(sql`DATE(${cashsalesdetailsTable.cashsalesdate})`);
 
-    return result.map((row) => ({
-      month: row.month?.trim() || '',
-      netSales: Number(row.netSales) || 0,
-      discount: Number(row.discount) || 0
-    }));
+    // Map only existing days (exclude zero-activity days) and format label as MM/DD
+    return result.map((row) => {
+      const d = new Date(row.date);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return {
+        date: `${mm}/${dd}`,
+        netSales: Number(row.netSales) || 0,
+        discount: Number(row.discount) || 0
+      };
+    });
   } catch (error) {
-    console.error('Error getting monthly sales and discount data:', error);
+    console.error('Error getting daily sales and discount data:', error);
     return [];
   }
 }
 
 export async function getWeeklySalesAndDiscountData() {
   try {
-    const sampleDates = await db
-      .select({
-        date: cashsalesdetailsTable.cashsalesdate,
-        netAmount: cashsalesdetailsTable.netamount
-      })
-      .from(cashsalesdetailsTable)
-      .limit(5);
-
-    // console.log('📅 Sample dates from database:', sampleDates);
-
     // Get weekly data with date range formatting
     const result = await db
       .select({
@@ -421,6 +417,33 @@ export async function getWeeklySalesAndDiscountData() {
       console.error('Error in fallback weekly data query:', fallbackError);
       return [];
     }
+  }
+}
+
+export async function getMonthlySalesAndDiscountData() {
+  try {
+    const result = await db
+      .select({
+        month: sql<string>`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
+        monthNumber: sql<number>`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`,
+        netSales: sum(cashsalesdetailsTable.netamount),
+        discount: sum(cashsalesdetailsTable.discount)
+      })
+      .from(cashsalesdetailsTable)
+      .groupBy(
+        sql`TO_CHAR(${cashsalesdetailsTable.cashsalesdate}, 'Month')`,
+        sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`
+      )
+      .orderBy(sql`EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate})`);
+
+    return result.map((row) => ({
+      month: row.month?.trim() || '',
+      netSales: Number(row.netSales) || 0,
+      discount: Number(row.discount) || 0
+    }));
+  } catch (error) {
+    console.error('Error getting monthly sales and discount data:', error);
+    return [];
   }
 }
 

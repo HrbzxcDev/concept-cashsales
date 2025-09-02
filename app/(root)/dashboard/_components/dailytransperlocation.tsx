@@ -113,7 +113,7 @@ export function DailyTransPerLocation() {
         {!isLoading && chartData && chartData.length > 0 ? (
           <ChartContainer
             config={chartConfig}
-            className="aspect-auto h-[200px] w-full pt-7"
+            className="aspect-auto h-[201px] w-full pt-6"
           >
             <AreaChart
               accessibilityLayer
@@ -121,7 +121,8 @@ export function DailyTransPerLocation() {
               margin={{
                 left: 1,
                 right: 1,
-                top: 1
+                top: 1,
+                bottom: 4
               }}
             >
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -176,7 +177,7 @@ export function DailyTransPerLocation() {
             </AreaChart>
           </ChartContainer>
         ) : (
-          <div className="aspect-auto h-[200px] w-full pt-7 flex items-center justify-center">
+          <div className="aspect-auto h-[221px] w-full pt-7 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
               <Loader2 className="h-8 w-8 animate-spin" />
               <p className="text-sm font-medium">Loading Daily Transaction Data...</p>

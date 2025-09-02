@@ -27,6 +27,7 @@ interface OverviewProps {
   totalDiscount: number;
   monthlySalesAndDiscountData: any[];
   weeklySalesAndDiscountData: any[];
+  dailySalesAndDiscountData: any[];
   cashsalesData: any[];
   cashsalesDetailsData: any[];
   percentageChangeData: {
@@ -55,6 +56,7 @@ export default function Overview({
   totalDiscount,
   monthlySalesAndDiscountData,
   weeklySalesAndDiscountData,
+  dailySalesAndDiscountData,
   cashsalesData,
   cashsalesDetailsData,
   percentageChangeData,
@@ -71,7 +73,7 @@ export default function Overview({
   // );
   // Use real percentage change data instead of mock functions
   const getPercentageChangeTransactions = () => percentageChangeData.percentage;
-  const getPercentageChangeActivity = () => 15.2; // Keep this as mock for now
+  const getPercentageChangeActivity = () => 0.0; // Keep this as mock for now
 
   // Function to format date to readable format
   const formatDate = (dateString: string) => {
@@ -300,7 +302,7 @@ export default function Overview({
                 ) : (
                   <TrendingDown className="mr-1 h-4 w-4" />
                 )}
-                {getTodayTransactions()} transactions today
+                {getTodayTransactions()} Transactions Today
               </Badge>
             </div>
           </CardContent>
@@ -375,7 +377,6 @@ export default function Overview({
                 )}
                 {getPercentageChangeActivity()}%
               </Badge>
-              From Last Month
             </div>
           </CardContent>
           <div className="absolute bottom-1 right-8">
@@ -397,6 +398,7 @@ export default function Overview({
               discount={totalDiscount}
               monthlyData={monthlySalesAndDiscountData}
               weeklyData={weeklySalesAndDiscountData}
+              dailyData={dailySalesAndDiscountData}
             />
            
           </div>
