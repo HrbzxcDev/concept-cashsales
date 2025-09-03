@@ -36,13 +36,12 @@ import {
   ChevronRightIcon,
   Search,
   X,
-  Filter,
-  Check,
-  MapPinHouse,
-  Hash,
   Braces,
   Unplug,
-  ShoppingBasket
+  ShoppingBasket,
+  TrendingUp,
+  TrendingDown,
+  Info
 } from 'lucide-react';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
@@ -55,6 +54,13 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
@@ -83,6 +89,7 @@ export function DataTable<TData, TValue>({
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [jsonDialogOpen, setJsonDialogOpen] = React.useState(false);
+  const [summaryRowData, setSummaryRowData] = React.useState<any>(null);
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -90,27 +97,8 @@ export function DataTable<TData, TValue>({
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
   const [filterType, setFilterType] = React.useState<
-    'all' | 'cashsalescode' | 'stocklocation' | 'description'
+    'all' | 'cashsalescode' | 'project' | 'description'
   >('all');
-  const [filterDropdownOpen, setFilterDropdownOpen] = React.useState(false);
-  const filterDropdownRef = React.useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(event.target as Node)
-      ) {
-        setFilterDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const filteredData = React.useMemo(() => {
     return data
@@ -133,8 +121,8 @@ export function DataTable<TData, TValue>({
           return (item as any).cashsalescode
             .toLowerCase()
             .includes(searchLower);
-        } else if (filterType === 'stocklocation') {
-          return (item as any).stocklocation
+        } else if (filterType === 'project') {
+          return (item as any).project
             .toLowerCase()
             .includes(searchLower);
         } else if (filterType === 'description') {
@@ -262,6 +250,135 @@ export function DataTable<TData, TValue>({
     );
   }
 
+  function SummaryCard({ rowData }: { rowData: any }) {
+    const formatMoney = (n: any) =>
+      typeof n === 'number'
+        ? n.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })
+        : n ?? '-';
+
+    const formatNumber = (n: any) =>
+      typeof n === 'number'
+        ? n.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          })
+        : n ?? '-';
+
+    const handleViewFullDetails = () => {
+      if (rowData) {
+        setSelectedRow(rowData);
+        setDialogOpen(true);
+      }
+    };
+
+    const hasData = rowData && Object.keys(rowData).length > 0;
+
+    return (
+      <div className="w-full rounded-lg border p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <ShoppingBasket className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Item Summary</h2>
+              <p className="text-slate-300 text-sm">
+                {hasData 
+                  ? `Summary for ${rowData?.description || rowData?.cashsalescode || 'Selected Item'}`
+                  : 'Click on any row to view item summary'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {hasData && (
+          <div className="mb-6 flex gap-6 text-xs text-slate-400">
+            <div>Cash Sales Code: <span className="text-white font-medium">{rowData?.cashsalescode || '-'}</span></div>
+            <div>Date: <span className="text-white font-medium">{rowData?.cashsalesdate ? new Date(rowData.cashsalesdate).toLocaleDateString('en-PH') : '-'}</span></div>
+          </div>
+        )}
+
+        {hasData ? (
+          <div className="p-1">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="col-span-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Net Sales */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Net Sales</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.amount || 0)}</div>
+                    <div className="mt-1 text-xs text-slate-400">From selected transaction</div>
+                  </CardContent>
+                </Card>
+
+                {/* Orders */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Orders</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">{formatNumber(rowData?.quantity || 0)}</div>
+                    <div className="mt-1 text-xs text-slate-400">Total quantity</div>
+                  </CardContent>
+                </Card>
+
+                {/* Discount */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Discount</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.discount || 0)}</div>
+                    <div className="mt-1 text-xs text-slate-400">Applied discount</div>
+                  </CardContent>
+                </Card>
+
+                {/* Tax Amount */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Tax Amount</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.taxamount || 0)}</div>
+                    <div className="mt-1 text-xs text-slate-400">Computed tax</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Graph area */}
+              <div className="col-span-1 md:col-span-2">
+                <div className="h-40 rounded-lg border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-900">
+                  <div className="h-full w-full rounded-lg bg-[radial-gradient(circle_at_70%_20%,rgba(59,130,246,0.25),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(16,185,129,0.2),transparent_40%)]"></div>
+                </div>
+                <div className="mt-3 text-right text-slate-400 text-sm">
+                  Net Amount: <span className="font-semibold text-white">₱{formatMoney(rowData?.netamount || 0)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-slate-400">
+            <div className="p-4 bg-slate-800 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <ShoppingBasket className="h-10 w-10 opacity-50" />
+            </div>
+            <p className="text-xl font-medium text-white mb-2">No Item Selected</p>
+            <p className="text-sm">Click on any table row to view its summary</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function DetailsTable({ lines = [] as CashSaleDetailLine[] }) {
     if (!lines || lines.length === 0) {
       return (
@@ -284,7 +401,6 @@ export function DataTable<TData, TValue>({
       );
     });
 
-    //Dialog Box Table
     return (
       <div className="rounded-md border">
         <Table>
@@ -352,7 +468,10 @@ export function DataTable<TData, TValue>({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Summary Card - always visible */}
+      <SummaryCard rowData={summaryRowData} />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="w-full min-w-0">
           <CalendarDateRangePicker
@@ -370,7 +489,7 @@ export function DataTable<TData, TValue>({
                   ? 'CashSalesCode or Stock Location or Description...'
                   : filterType === 'cashsalescode'
                   ? 'Search CashSales Code...'
-                  : filterType === 'stocklocation'
+                  : filterType === 'project'
                   ? 'Search Stock Location...'
                   : filterType === 'description'
                   ? 'Search Description...'
@@ -394,10 +513,6 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="rounded-lg border bg-card">
-        {/* <div className="p-4">
-           <div className="mb-4 text-lg font-semibold">Cash Sales</div>
-         </div> */}
-
         <div className="relative">
           {/* Fixed Header */}
           <div className="sticky top-2 z-10 bg-card px-4 pb-2 ">
@@ -435,8 +550,12 @@ export function DataTable<TData, TValue>({
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && 'selected'}
-                        className="cursor-pointer hover:bg-muted/50 "
+                        className={`cursor-pointer hover:bg-muted/50`}
                         onClick={() => {
+                          setSelectedRow(row.original as any);
+                          setSummaryRowData(row.original as any);
+                        }}
+                        onDoubleClick={() => {
                           setSelectedRow(row.original as any);
                           setDialogOpen(true);
                         }}

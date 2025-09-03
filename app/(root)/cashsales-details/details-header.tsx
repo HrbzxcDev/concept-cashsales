@@ -23,14 +23,9 @@ export default async function CashSalesDetailsListingPage({}: CashSalesDetailsLi
 
   return (
     <PageContainer scrollable>
-      <div className="space-y-4">
+      <div className="space-y-0">
         <div className="flex place-items-end justify-between">
         </div>
-        <Separator
-          className={cn(
-            ' bg-[radial-gradient(circle_farthest-side_at_0_100%,#00ccb1,transparent),radial-gradient(circle_farthest-side_at_100%_0,#7b61ff,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]'
-          )}
-        />
         <div className="flex items-start justify-between"></div>
         <DataTable columns={CashsalesdetailsColumns} data={cashsalesdetailsData} />
       </div>
