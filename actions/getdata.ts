@@ -469,6 +469,7 @@ export async function getTop5ItemsByQuantity() {
   }
 }
 
+
 export interface CashSalesDetailsData {
   totalCount: number;
   data: any[];
@@ -503,4 +504,40 @@ export async function getCashSalesDetailsDataWithCount(): Promise<CashSalesDetai
     totalCount: totalCashSalesDetails,
     data: cashsalesdetailsData
   };
+}
+
+export async function getStockCodeTotals(stockCode: string) {
+  try {
+    const result = await db
+      .select({
+        stockcode: cashsalesdetailsTable.stockcode,
+        totalQuantity: sum(cashsalesdetailsTable.quantity),
+        totalAmount: sum(cashsalesdetailsTable.amount),
+        totalDiscount: sum(cashsalesdetailsTable.discount),
+        totalTaxAmount: sum(cashsalesdetailsTable.taxamount),
+        totalNetAmount: sum(cashsalesdetailsTable.netamount),
+        transactionCount: count()
+      })
+      .from(cashsalesdetailsTable)
+      .where(eq(cashsalesdetailsTable.stockcode, stockCode))
+      .groupBy(cashsalesdetailsTable.stockcode);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const item = result[0];
+    return {
+      stockcode: item.stockcode,
+      totalQuantity: Number(item.totalQuantity || 0),
+      totalAmount: Number(item.totalAmount || 0),
+      totalDiscount: Number(item.totalDiscount || 0),
+      totalTaxAmount: Number(item.totalTaxAmount || 0),
+      totalNetAmount: Number(item.totalNetAmount || 0),
+      transactionCount: Number(item.transactionCount || 0)
+    };
+  } catch (error) {
+    console.error('❌ Error getting stock code totals:', error);
+    return null;
+  }
 }

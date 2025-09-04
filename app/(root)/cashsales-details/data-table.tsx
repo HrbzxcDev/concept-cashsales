@@ -65,8 +65,8 @@ import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
 } from '@/actions/cashsales-client';
-import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client'; 
-
+import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
+import { getStockCodeTotals } from '@/actions/getdata';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -90,6 +90,9 @@ export function DataTable<TData, TValue>({
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [jsonDialogOpen, setJsonDialogOpen] = React.useState(false);
   const [summaryRowData, setSummaryRowData] = React.useState<any>(null);
+  const [stockCodeTotals, setStockCodeTotals] = React.useState<any>(null);
+  const [stockCodeTotalsLoading, setStockCodeTotalsLoading] =
+    React.useState(false);
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -97,7 +100,7 @@ export function DataTable<TData, TValue>({
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
   const [filterType, setFilterType] = React.useState<
-    'all' | 'cashsalescode' | 'project' | 'description'
+    'all' | 'cashsalescode' | 'stockcode' | 'description'
   >('all');
 
   const filteredData = React.useMemo(() => {
@@ -121,19 +124,15 @@ export function DataTable<TData, TValue>({
           return (item as any).cashsalescode
             .toLowerCase()
             .includes(searchLower);
-        } else if (filterType === 'project') {
-          return (item as any).project
-            .toLowerCase()
-            .includes(searchLower);
+        } else if (filterType === 'stockcode') {
+          return (item as any).stockcode.toLowerCase().includes(searchLower);
         } else if (filterType === 'description') {
-          return (item as any).description
-            .toLowerCase()
-            .includes(searchLower);
+          return (item as any).description.toLowerCase().includes(searchLower);
         } else {
           // Search in both fields when filter type is 'all'
           return (
             (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
-            (item as any).stocklocation.toLowerCase().includes(searchLower) ||
+            (item as any).stockcode.toLowerCase().includes(searchLower) ||
             (item as any).description.toLowerCase().includes(searchLower)
           );
         }
@@ -162,6 +161,21 @@ export function DataTable<TData, TValue>({
       columnFilters
     }
   });
+
+  // Fetch stock code totals when a row is clicked
+  const fetchStockCodeTotals = async (stockCode: string) => {
+    if (!stockCode) return;
+    try {
+      setStockCodeTotalsLoading(true);
+      const totals = await getStockCodeTotals(stockCode);
+      setStockCodeTotals(totals);
+    } catch (err) {
+      console.error('Error fetching stock code totals:', err);
+      setStockCodeTotals(null);
+    } finally {
+      setStockCodeTotalsLoading(false);
+    }
+  };
 
   // Fetch detail when dialog opens for a specific row
   React.useEffect(() => {
@@ -275,37 +289,85 @@ export function DataTable<TData, TValue>({
     };
 
     const hasData = rowData && Object.keys(rowData).length > 0;
+    const hasStockCodeTotals = stockCodeTotals && !stockCodeTotalsLoading;
 
     return (
-      <div className="w-full rounded-lg border p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="w-full rounded-lg border p-4">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-lg">
+            <div className="rounded-lg bg-blue-900 p-2">
               <ShoppingBasket className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">Item Summary</h2>
-              <p className="text-slate-300 text-sm">
-                {hasData 
-                  ? `Summary for ${rowData?.description || rowData?.cashsalescode || 'Selected Item'}`
-                  : 'Click on any row to view item summary'
-                }
+              <h2 className="text-xl font-semibold text-white">
+                <p>Item Summary</p>
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {hasData ? (
+                  <>
+                    Summary for{' '}
+                    <span className="font-medium text-lg text-white">
+                      {rowData?.description || rowData?.cashsalescode || 'Selected Item'}
+                    </span>
+                  </>
+                ) : (
+                  'Click on any row to view item summary'
+                )}
               </p>
             </div>
           </div>
         </div>
 
         {hasData && (
-          <div className="mb-6 flex gap-6 text-xs text-slate-400">
-            <div>Cash Sales Code: <span className="text-white font-medium">{rowData?.cashsalescode || '-'}</span></div>
-            <div>Date: <span className="text-white font-medium">{rowData?.cashsalesdate ? new Date(rowData.cashsalesdate).toLocaleDateString('en-PH') : '-'}</span></div>
+          <div className="mb-6 flex gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              Stock Code:{' '}
+              <span className="font-medium dark:text-white">
+                {rowData?.stockcode || '-'}
+              </span>
+            </div>
+            {!hasStockCodeTotals && (
+              <div className="flex items-center gap-2">
+                Cash Sales Code:{' '}
+                <span className="font-medium dark:text-white">
+                  {rowData?.cashsalescode || '-'}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              Date:{' '}
+              <span className="font-medium dark:text-white">
+                {rowData?.cashsalesdate
+                  ? new Date(rowData.cashsalesdate).toLocaleDateString(
+                      'en-PH',
+                      {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }
+                    )
+                  : '-'}
+              </span>
+            </div>
           </div>
         )}
 
-        {hasData ? (
+        {stockCodeTotalsLoading ? (
+          <div className="py-12 text-center text-slate-400">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 p-4">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            </div>
+            <p className="mb-2 text-xl font-medium text-white">
+              Loading Stock Code Totals
+            </p>
+            <p className="text-sm">
+              Fetching aggregated data for all transactions...
+            </p>
+          </div>
+        ) : hasData ? (
           <div className="p-1">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="col-span-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="col-span-1 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {/* Net Sales */}
                 <Card className="border-slate-700 bg-card">
                   <CardContent className="p-4">
@@ -313,8 +375,41 @@ export function DataTable<TData, TValue>({
                       <span>Net Sales</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.amount || 0)}</div>
-                    <div className="mt-1 text-xs text-slate-400">From selected transaction</div>
+                    <div className="text-2xl font-bold text-white">
+                      ₱
+                      {formatMoney(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.totalAmount
+                          : rowData?.amount || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total from all transactions'
+                        : 'From selected transaction'}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Net Amount */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Net Amount</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatMoney(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.totalNetAmount
+                          : rowData?.netamount || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total net amount from all transactions'
+                        : 'Total net amount'}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -325,8 +420,18 @@ export function DataTable<TData, TValue>({
                       <span>Orders</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">{formatNumber(rowData?.quantity || 0)}</div>
-                    <div className="mt-1 text-xs text-slate-400">Total quantity</div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatNumber(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.totalQuantity
+                          : rowData?.quantity || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total quantity from all transactions'
+                        : 'Total quantity'}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -337,8 +442,19 @@ export function DataTable<TData, TValue>({
                       <span>Discount</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.discount || 0)}</div>
-                    <div className="mt-1 text-xs text-slate-400">Applied discount</div>
+                    <div className="text-2xl font-bold text-white">
+                      ₱
+                      {formatMoney(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.totalDiscount
+                          : rowData?.discount || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total discount from all transactions'
+                        : 'Applied discount'}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -349,30 +465,63 @@ export function DataTable<TData, TValue>({
                       <span>Tax Amount</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">₱{formatMoney(rowData?.taxamount || 0)}</div>
-                    <div className="mt-1 text-xs text-slate-400">Computed tax</div>
+                    <div className="text-2xl font-bold text-white">
+                      ₱
+                      {formatMoney(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.totalTaxAmount
+                          : rowData?.taxamount || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total tax from all transactions'
+                        : 'Computed tax'}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Total Transactions */}
+                <Card className="border-slate-700 bg-card">
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                      <span>Total Transactions</span>
+                      <Info className="h-3 w-3 opacity-70" />
+                    </div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatNumber(
+                        hasStockCodeTotals
+                          ? stockCodeTotals?.transactionCount
+                          : rowData?.transactioncount || 0
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {hasStockCodeTotals
+                        ? 'Total transactions from all transactions'
+                        : 'Total transactions'}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
-
               {/* Graph area */}
-              <div className="col-span-1 md:col-span-2">
+              <div className="col-span-1 md:col-span-1">
                 <div className="h-40 rounded-lg border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-900">
                   <div className="h-full w-full rounded-lg bg-[radial-gradient(circle_at_70%_20%,rgba(59,130,246,0.25),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(16,185,129,0.2),transparent_40%)]"></div>
-                </div>
-                <div className="mt-3 text-right text-slate-400 text-sm">
-                  Net Amount: <span className="font-semibold text-white">₱{formatMoney(rowData?.netamount || 0)}</span>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400">
-            <div className="p-4 bg-slate-800 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+          <div className="py-12 text-center text-slate-400">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 p-4">
               <ShoppingBasket className="h-10 w-10 opacity-50" />
             </div>
-            <p className="text-xl font-medium text-white mb-2">No Item Selected</p>
-            <p className="text-sm">Click on any table row to view its summary</p>
+            <p className="mb-2 text-xl font-medium text-white">
+              No Item Selected
+            </p>
+            <p className="text-sm">
+              Click on any table row to view its summary
+            </p>
           </div>
         )}
       </div>
@@ -486,14 +635,14 @@ export function DataTable<TData, TValue>({
             <Input
               placeholder={
                 filterType === 'all'
-                  ? 'CashSalesCode or Stock Location or Description...'
+                  ? 'CashSalesCode or Stock Code or Description...'
                   : filterType === 'cashsalescode'
                   ? 'Search CashSales Code...'
-                  : filterType === 'project'
-                  ? 'Search Stock Location...'
+                  : filterType === 'stockcode'
+                  ? 'Search Stock Code...'
                   : filterType === 'description'
                   ? 'Search Description...'
-                  : 'Search CashSales Code or Stock Location...'
+                  : 'Search CashSales Code or Stock Code or Description...'
               }
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
@@ -552,8 +701,13 @@ export function DataTable<TData, TValue>({
                         data-state={row.getIsSelected() && 'selected'}
                         className={`cursor-pointer hover:bg-muted/50`}
                         onClick={() => {
-                          setSelectedRow(row.original as any);
-                          setSummaryRowData(row.original as any);
+                          const rowData = row.original as any;
+                          setSelectedRow(rowData);
+                          setSummaryRowData(rowData);
+                          // Fetch stock code totals for the clicked row
+                          if (rowData?.stockcode) {
+                            fetchStockCodeTotals(rowData.stockcode);
+                          }
                         }}
                         onDoubleClick={() => {
                           setSelectedRow(row.original as any);
@@ -713,19 +867,15 @@ export function DataTable<TData, TValue>({
               </div>
             </div>
           )}
-           {detailError && (
-             <div className="py-6 mb-4 text-center">
-               <div className="text-lg text-red-500 mb-4">
-                 {detailError}
-               </div>
-               <div className="flex flex-col items-center justify-center gap-4 text-white">
-                 <Unplug className="h-24 w-24" 
-                 strokeWidth={1}
-                 />
-                 <span>Can't Retrieve Data From The Server!</span>
-               </div>
-             </div>
-           )}
+          {detailError && (
+            <div className="mb-4 py-6 text-center">
+              <div className="mb-4 text-lg text-red-500">{detailError}</div>
+              <div className="flex flex-col items-center justify-center gap-4 text-white">
+                <Unplug className="h-24 w-24" strokeWidth={1} />
+                <span>Can't Retrieve Data From The Server!</span>
+              </div>
+            </div>
+          )}
           {!detailLoading && !detailError && detail && (
             <div className="space-y-6">
               <SummaryTable data={detail} />
@@ -752,7 +902,7 @@ export function DataTable<TData, TValue>({
           {detail && (
             <div className="space-y-4">
               <div className="rounded-md border bg-muted p-4">
-                <pre className="whitespace-pre-wrap text-sm overflow-auto max-h-[60vh]">
+                <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap text-sm">
                   {JSON.stringify(detail, null, 2)}
                 </pre>
               </div>
