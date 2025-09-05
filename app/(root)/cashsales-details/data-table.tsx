@@ -1031,7 +1031,7 @@ export function DataTable<TData, TValue>({
               <div className="mb-4 text-lg text-red-500">{detailError}</div>
               <div className="flex flex-col items-center justify-center gap-4 text-white">
                 <Unplug className="h-24 w-24" strokeWidth={1} />
-                <span>Can&apos;t Retrieve Data From The Server!</span>
+                <span>Cant Retrieve Data From The Server!</span>
               </div>
             </div>
           )}
