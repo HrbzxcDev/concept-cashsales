@@ -11,7 +11,7 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'CashSales Details',
-    url: '/Cashsales-Details',
+    url: '/cashsales-details',
     icon: 'listCollapse',
     isActive: false,
     items: [] // Empty array as there are no child items for CashSales Details
