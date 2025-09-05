@@ -342,7 +342,7 @@ export function DataTable<TData, TValue>({
       <div className="w-full rounded-lg border p-4">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-900 p-2">
+            <div className="rounded-lg bg-zinc-800 p-2">
               <ShoppingBasket className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -427,14 +427,14 @@ export function DataTable<TData, TValue>({
         </div>
 
         {stockCodeTotalsLoading ? (
-          <div className="h-[284px] py-12 text-center text-slate-400">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 p-4">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600"></div>
+          <div className="h-[284px] py-12 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-zinc-800 p-4">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-slate-400"></div>
             </div>
-            <p className="mb-2 text-xl font-medium text-white">
+            <p className="mb-2 text-xl font-medium dark:before:text-white">
               Loading Item Summary
             </p>
-            <p className="text-sm">
+            <p className="text-sm text-muted-foreground">
               Fetching aggregated data for all transactions...
             </p>
           </div>
@@ -671,14 +671,14 @@ export function DataTable<TData, TValue>({
             </div>
           </div>
         ) : (
-          <div className="py-12 text-center text-slate-400">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 p-4">
+          <div className="h-[292px] py-12 text-center text-slate-500">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-zinc-800 p-4">
               <ShoppingBasket className="h-10 w-10 opacity-50" />
             </div>
             <p className="mb-2 text-xl font-medium text-white">
               No Item Selected
             </p>
-            <p className="text-sm">
+            <p className="text-sm text-muted-foreground">
               Click on any table row to view its summary
             </p>
           </div>
@@ -1031,7 +1031,7 @@ export function DataTable<TData, TValue>({
               <div className="mb-4 text-lg text-red-500">{detailError}</div>
               <div className="flex flex-col items-center justify-center gap-4 text-white">
                 <Unplug className="h-24 w-24" strokeWidth={1} />
-                <span>Can't Retrieve Data From The Server!</span>
+                <span>Can&apos;t Retrieve Data From The Server!</span>
               </div>
             </div>
           )}

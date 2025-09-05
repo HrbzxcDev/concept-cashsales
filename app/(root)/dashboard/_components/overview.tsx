@@ -7,7 +7,7 @@ import {
   TrendingDown,
   ShoppingCart,
   MapPinHouse,
-  Percent,
+  ShoppingBasket,
   PackageCheck
 } from 'lucide-react';
 import { DataTable } from '@/app/(root)/cashsales-table/data-table';
@@ -245,7 +245,7 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Transactions
             </CardTitle>
-            <ShoppingCart size={28} color="#333333" strokeWidth={1.5} />
+            <ShoppingCart className='dark:text-muted-foreground' size={28} strokeWidth={1.5}  />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalTransactions}</div>
@@ -282,7 +282,7 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Yesterday&apos;s Transactions
             </CardTitle>
-            <PackageCheck size={28} color="#333333" strokeWidth={1.5} />
+            <PackageCheck className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -320,7 +320,7 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Items Sold
             </CardTitle>
-            <Percent size={28} color="#333333" strokeWidth={1.5} />
+            <ShoppingBasket className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalItemsQuantity}</div>
@@ -357,7 +357,7 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Deployed Branches
             </CardTitle>
-            <MapPinHouse size={28} color="#333333" strokeWidth={1.5} />
+            <MapPinHouse className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalBranch}</div>

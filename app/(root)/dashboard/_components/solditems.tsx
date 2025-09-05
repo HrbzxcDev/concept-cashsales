@@ -1,4 +1,3 @@
-import { TrendingUp } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -10,11 +9,7 @@ import {
 
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
+  CardContent
 } from '@/components/ui/card';
 import {
   ChartConfig,
