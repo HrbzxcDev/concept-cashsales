@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +20,8 @@ import {
   XCircle,
   GitPullRequestCreateArrow,
   Clock,
-  GitBranchPlus
+  GitBranchPlus,
+  Loader2
 } from 'lucide-react';
 
 type ActivityItem = {
@@ -36,7 +43,6 @@ function formatDate(dateString: string) {
 }
 
 function formatTime(timeString: string) {
-  // Handle HH:MM:SS or HH:MM:SS.sss
   const [h, m, s] = timeString.split(':');
   const date = new Date();
   date.setHours(
@@ -55,7 +61,10 @@ export default function FetchActivity() {
   const [loading, setLoading] = useState(true);
   const [manualOpen, setManualOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: new Date(), to: new Date() });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date()
+  });
   const { refreshTrigger } = useAutoFetch();
 
   const loadActivities = async () => {
@@ -72,7 +81,7 @@ export default function FetchActivity() {
   // Refresh activities when auto-fetch triggers a refresh
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('🔄 Auto-fetch triggered fetch activity refresh');
+      // console.log('🔄 Auto-fetch triggered fetch activity refresh');
       loadActivities();
     }
   }, [refreshTrigger]);
@@ -90,14 +99,32 @@ export default function FetchActivity() {
       };
       const from = toYMDLocal(dateRange.from);
       const to = toYMDLocal(dateRange.to ?? dateRange.from);
-      const url = `/api/fetch-and-save?upsert=true&dateFrom=${from}&dateTo=${to}&description=${encodeURIComponent('Manual Fetch')}`;
+      const url = `/api/fetch-and-save?upsert=true&dateFrom=${from}&dateTo=${to}&description=${encodeURIComponent(
+        'Manual Fetch'
+      )}&forceDetails=true`;
       const res = await fetch(url, { method: 'GET' });
-      // Ignore response body; refresh activity list regardless
-      await new Promise((r) => setTimeout(r, 300));
-      const rows = await getRecentApiFetches();
-      setActivities(rows as ActivityItem[]);
-      setManualOpen(false);
+
+      // Check if the fetch was successful
+      if (res.ok) {
+        await res.json();
+        // console.log('✅ Manual fetch completed successfully:', result.message);
+
+        // Refresh activity list
+        await new Promise((r) => setTimeout(r, 300));
+        const rows = await getRecentApiFetches();
+        setActivities(rows as ActivityItem[]);
+        setManualOpen(false);
+
+        // Refresh the window after successful manual fetch
+        // console.log('🔄 Refreshing window after successful manual fetch...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000); // 1 second delay to allow for any pending operations
+      } else {
+        // console.error('❌ Manual fetch failed:', res.status, res.statusText);
+      }
     } catch (e) {
+      //  console.error('❌ Error during manual fetch:', e);
       // swallow for now; activities will still show previous state
     } finally {
       setSubmitting(false);
@@ -109,7 +136,11 @@ export default function FetchActivity() {
       <CardHeader className="border-b py-4">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-lg">Recent Activities</CardTitle>
-          <Button size="sm" variant="outline" onClick={() => setManualOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setManualOpen(true)}
+          >
             Manual Fetch
             <GitBranchPlus className="h-4 w-4" />
           </Button>
@@ -118,12 +149,14 @@ export default function FetchActivity() {
       <CardContent className="flex-1 overflow-y-auto p-4">
         <ul className="space-y-5">
           {loading && (
-            <li className="text-sm text-center text-muted-foreground">
+            <li className="text-center text-sm text-muted-foreground">
               Loading Activity....
             </li>
           )}
           {!loading && activities.length === 0 && (
-            <li className="text-sm text-center align-middle text-muted-foreground">No Activity Yet</li>
+            <li className="text-center align-middle text-sm text-muted-foreground">
+              No Activity Yet
+            </li>
           )}
           {activities.map((item) => {
             return (
@@ -141,7 +174,7 @@ export default function FetchActivity() {
                       </p>
                     </div>
                     <div className="mt-1 flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-2 mx-2 text-xs text-muted-foreground">
+                      <div className="mx-2 flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="h-4 w-4" />
                         <span>
                           {formatDate(item.datefetched)} •{' '}
@@ -175,18 +208,40 @@ export default function FetchActivity() {
         </ul>
       </CardContent>
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-      <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Manual Fetch</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Select a date range to fetch and upsert data.</p>
-            <CalendarDateRangePicker className="w-full" date={dateRange} onDateChange={setDateRange} />
+            <p className="text-sm text-muted-foreground">
+              Select a date range to fetch and upsert data.
+            </p>
+            <CalendarDateRangePicker
+              className="w-full"
+              date={dateRange}
+              onDateChange={setDateRange}
+            />
           </div>
           <DialogFooter className="gap-2 sm:gap-0 sm:space-x-2">
-            <Button variant="ghost" onClick={() => setManualOpen(false)} disabled={submitting}>Cancel</Button>
-            <Button onClick={handleManualFetch} disabled={submitting || !dateRange?.from}>
-              {submitting ? 'Fetching Data…' : 'Fetch Data'}
+            <Button
+              variant="ghost"
+              onClick={() => setManualOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleManualFetch}
+              disabled={submitting || !dateRange?.from}
+            >
+              {submitting ? (
+                <>
+                  Fetching Data...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                'Fetch Data'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/utils/db/drizzle';
-import { cashsalesTable, apifetchedTable } from '@/utils/db/schema';
+import { cashsalesTable, apiactivityTable } from '@/utils/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { fetchAndSaveCashSalesDetails } from '@/actions/fetchapi';
 
 // Types
 interface ExternalAPICashSale {
@@ -20,6 +21,15 @@ interface FetchAndSaveResponse {
   updatedCount?: number;
   errors?: string[];
   data?: any[];
+  alreadyCompleted?: boolean;
+  detailsResult?: {
+    success: boolean;
+    message: string;
+    savedCount?: number;
+    updatedCount?: number;
+    errors?: string[];
+    alreadyCompleted?: boolean;
+  } | null;
 }
 
 /**
@@ -113,12 +123,16 @@ async function saveAPIFetchActivity(
 ) {
   try {
     const now = new Date();
-    const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
-    const currentTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Manila' }).split(' ')[0]; // HH:MM:SS format in Philippine timezone
+    const currentDate = now.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // YYYY-MM-DD format in Philippine timezone
+    const currentTime = now
+      .toLocaleTimeString('en-GB', { timeZone: 'Asia/Manila' })
+      .split(' ')[0]; // HH:MM:SS format in Philippine timezone
 
     // Create activity record
     const activityRecord = await db
-      .insert(apifetchedTable)
+      .insert(apiactivityTable)
       .values({
         description: description,
         count: count.toString(),
@@ -130,18 +144,9 @@ async function saveAPIFetchActivity(
       })
       .returning();
 
-    console.log('API fetch activity saved:', {
-      id: activityRecord[0].id,
-      description: activityRecord[0].description,
-      count: activityRecord[0].count,
-      datefetched: activityRecord[0].datefetched,
-      timefetched: activityRecord[0].timefetched,
-      status: activityRecord[0].status
-    });
-
     return activityRecord[0];
   } catch (error) {
-    console.error('Error saving API fetch activity:', error);
+    // console.error('Error saving API fetch activity:', error);
     throw error;
   }
 }
@@ -155,40 +160,53 @@ export async function GET(request: NextRequest) {
   const { searchParams } = requestURL;
 
   // Get query parameters
-  const limit = parseInt(searchParams.get('limit') || '100');
+  const limit = parseInt(searchParams.get('limit') || '500');
   const upsert = searchParams.get('upsert') === 'true';
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
-  
-  try {
+  const fetchDetails = searchParams.get('fetchDetails') !== 'false'; // Default to true unless explicitly set to false
+  const autoFetchDetails = searchParams.get('autoFetchDetails') !== 'false'; // Default to true unless explicitly set to false
+  const detailsLimit = parseInt(searchParams.get('detailsLimit') || '500');
+  const detailsBatchSize = parseInt(
+    searchParams.get('detailsBatchSize') || '500'
+  );
+  const forceDetails = searchParams.get('forceDetails') === 'true'; // Force re-run details even if already completed
 
+  try {
     // External API configuration
     const API_BASE_URL =
       process.env.NEXT_PUBLIC_API_BASE_URL ||
       'https://api.qne.cloud/api/CashSales';
     const DB_CODE = process.env.NEXT_PUBLIC_DB_CODE || '';
 
-    console.log('Starting fetch and save operation...');
-    console.log('API URL:', API_BASE_URL);
-    console.log('Limit:', limit);
-    console.log('Upsert:', upsert);
-
     // Get today's date in YYYY-MM-DD format (Philippine timezone)
     const now = new Date();
     const today = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
     const yesterdayDate = new Date(now);
     yesterdayDate.setDate(now.getDate() - 1);
-    const yesterday = yesterdayDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); // YYYY-MM-DD format in Philippine timezone
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // YYYY-MM-DD format in Philippine timezone
 
     // Build OData query parameters for external API
     const queryParams = new URLSearchParams();
 
     // Add OData parameters
     queryParams.append('$skip', '0');
-    queryParams.append('$top', limit > 0 ? limit.toString() : '100');
+    queryParams.append('$top', limit > 0 ? limit.toString() : '500');
     // Use provided date range if available, otherwise default to [yesterday, today)
     const fromDate = dateFrom || yesterday;
     const toDate = dateTo || today;
+
+    // console.log('Starting fetch and save operation...');
+    // console.log('API URL:', API_BASE_URL);
+    // console.log('DB CODE:', DB_CODE);
+    // console.log('Limit:', limit);
+    // console.log('Upsert:', upsert);
+    // console.log('Date From:', fromDate);
+    // console.log('Date To:', toDate);
+    // console.log('Fetch Details:', fetchDetails);
+    // console.log('Auto Fetch Details:', autoFetchDetails);
     queryParams.append(
       '$filter',
       `cashsalesdate ge ${fromDate} and cashsalesdate le ${toDate}`
@@ -197,7 +215,7 @@ export async function GET(request: NextRequest) {
     // Construct the full URL
     const url = `${API_BASE_URL}?${queryParams.toString()}`;
 
-    console.log('Fetching data from:', url);
+    // console.log('Fetching data from:', url);
 
     // Fetch data from external API
     const response = await fetch(url, {
@@ -210,14 +228,14 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
+      // console.error('API Error Response:', errorText);
       throw new Error(
         `HTTP error! status: <span class="text-[#ef4444]">${response.status}</span> - ${errorText}`
       );
     }
 
     const apiData: ExternalAPICashSale[] = await response.json();
-    console.log(`Fetched ${apiData.length} Records From External API`);
+    // console.log(`Fetched ${apiData.length} Records From External API`);
     // console.log(
     //   'Raw API response sample:',
     //   JSON.stringify(apiData.slice(0, 2), null, 2)
@@ -225,27 +243,28 @@ export async function GET(request: NextRequest) {
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
       // Save activity for empty response, but avoid duplicates for the same date
+      // Only log for manual fetches or if no activity was logged today for automatic fetches
       try {
+        const baseNoDataDesc = 'API Fetch Operation - No Data Returned From External API';
         const existingNoData = await db
-          .select({ id: apifetchedTable.id })
-          .from(apifetchedTable)
+          .select({ id: apiactivityTable.id })
+          .from(apiactivityTable)
           .where(
             and(
-              eq(apifetchedTable.datefetched, today),
-              eq(
-                apifetchedTable.description,
-                'API Fetch Operation - No Data Returned From External API'
-              )
+              eq(apiactivityTable.datefetched, today),
+              eq(apiactivityTable.description, baseNoDataDesc)
             )
           )
           .limit(1);
 
-        if (existingNoData.length === 0) {
-          const baseNoDataDesc = 'API Fetch Operation - No Data Returned ';
+        // Only log if it's a manual fetch or if no activity was logged today for automatic fetches
+        const shouldLogNoData = customDescription || existingNoData.length === 0;
+        
+        if (shouldLogNoData) {
           let noDataDescription = customDescription
             ? `${customDescription} - ${baseNoDataDesc}`
             : baseNoDataDesc;
-            
+
           // Add date range to description if it's a manual fetch with date range
           if (customDescription && dateFrom && dateTo) {
             const formatDateForDisplay = (dateStr: string) => {
@@ -260,18 +279,18 @@ export async function GET(request: NextRequest) {
             const toDisplay = formatDateForDisplay(dateTo);
             noDataDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseNoDataDesc}`;
           }
-          
+
           await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
-          console.log(
-            `Skipping duplicate no-data activity for ${today} (already logged)`
-          );
+          // console.log(
+          //   `Skipping duplicate no-data activity for ${today} (already logged for automatic fetch)`
+          // );
         }
       } catch (activityError) {
-        console.error(
-          'Failed to save API fetch activity for empty response:',
-          activityError
-        );
+        // console.error(
+        //   'Failed to save API fetch activity for empty response:',
+        //   activityError
+        // );
       }
 
       return NextResponse.json({
@@ -285,12 +304,6 @@ export async function GET(request: NextRequest) {
 
     // Filter out invalid records (those without cashsalesid)
     const validRecords = apiData.filter((item) => {
-      // console.log('Checking item:', JSON.stringify(item, null, 2));
-      // console.log('Item keys:', Object.keys(item || {}));
-      // console.log('Item cashsalesid:', item?.cashsalesid);
-      // console.log('Item cashsalesid type:', typeof item?.cashsalesid);
-      // console.log('Item cashsalesid trimmed:', item?.cashsalesid?.trim());
-      // Try different possible field names for cashsalesid
       const possibleIdFields = [
         'cashsalesid',
         'id',
@@ -304,41 +317,73 @@ export async function GET(request: NextRequest) {
         const itemAny = item as any;
         if (item && itemAny[field] && String(itemAny[field]).trim() !== '') {
           cashsalesid = String(itemAny[field]).trim();
-          // console.log(`Found cashsalesid in field '${field}':`, cashsalesid);
           break;
         }
       }
-
       const isValid = cashsalesid !== null;
 
-      // console.log('Is valid:', isValid);
-
       if (!isValid) {
-        console.warn(
-          'Skipping invalid record - no valid cashsalesid found:',
-          JSON.stringify(item, null, 2)
-        );
+        // console.warn(
+        //   'Skipping invalid record - no valid cashsalesid found:',
+        //   JSON.stringify(item, null, 2)
+        // );
       }
       return isValid;
     });
 
-    console.log(
-      `Filtered to ${validRecords.length} valid records out of ${apiData.length} total`
-    );
+    // console.log(
+    //   `Filtered to ${validRecords.length} valid records out of ${apiData.length} total`
+    // );
 
     if (validRecords.length === 0) {
-      // Save activity for no valid records
+      // Save activity for no valid records, but only for manual fetches or if not already logged today
       try {
-        await saveAPIFetchActivity(
-          'API Fetch Operation - No Valid Fecords Found After Filtering',
-          0,
-          true
-        );
+        const baseNoValidDesc = 'API Fetch Operation - No Valid Records Found After Filtering';
+        const existingNoValid = await db
+          .select({ id: apiactivityTable.id })
+          .from(apiactivityTable)
+          .where(
+            and(
+              eq(apiactivityTable.datefetched, today),
+              eq(apiactivityTable.description, baseNoValidDesc)
+            )
+          )
+          .limit(1);
+
+        // Only log if it's a manual fetch or if no activity was logged today for automatic fetches
+        const shouldLogNoValid = customDescription || existingNoValid.length === 0;
+        
+        if (shouldLogNoValid) {
+          let noValidDescription = customDescription
+            ? `${customDescription} - ${baseNoValidDesc}`
+            : baseNoValidDesc;
+
+          // Add date range to description if it's a manual fetch with date range
+          if (customDescription && dateFrom && dateTo) {
+            const formatDateForDisplay = (dateStr: string) => {
+              const date = new Date(dateStr);
+              return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            };
+            const fromDisplay = formatDateForDisplay(dateFrom);
+            const toDisplay = formatDateForDisplay(dateTo);
+            noValidDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseNoValidDesc}`;
+          }
+
+          await saveAPIFetchActivity(noValidDescription, 0, true);
+        } else {
+          // console.log(
+          //   `Skipping duplicate no-valid-records activity for ${today} (already logged for automatic fetch)`
+          // );
+        }
       } catch (activityError) {
-        console.error(
-          'Failed to save API fetch activity for no valid records:',
-          activityError
-        );
+        // console.error(
+        //   'Failed to save API fetch activity for no valid records:',
+        //   activityError
+        // );
       }
 
       return NextResponse.json({
@@ -359,25 +404,7 @@ export async function GET(request: NextRequest) {
     // Process each record
     for (const item of validRecords) {
       try {
-        // Log the raw item for debugging
-        // console.log('Processing item:', JSON.stringify(item, null, 2));
-
-        // Log the raw item before transformation for debugging
-        // console.log('=== DEBUGGING EMPTY FIELDS ===');
-        // console.log('Raw API item:', JSON.stringify(item, null, 2));
-        // console.log('Available fields in item:', Object.keys(item || {}));
-        // console.log('cashsalescode field:', item?.cashsalescode);
-        // console.log('customer field:', item?.customer);
-        // console.log('stocklocation field:', item?.stocklocation);
-        // console.log('status field:', item?.status);
-        // console.log('=== END DEBUG ===');
-
         const transformedData = transformAPIToDB(item);
-        // console.log(
-        //   'Transformed data:',
-        //   JSON.stringify(transformedData, null, 2)
-        // );
-
         if (
           transformedData.cashsalescode &&
           transformedData.cashsalescode.trim() !== ''
@@ -397,7 +424,9 @@ export async function GET(request: NextRequest) {
             // Update existing record only if there are actual changes
             const current = existingRecord[0] as any;
             const currentDate = current?.cashsalesdate
-              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+              ? new Date(current.cashsalesdate).toLocaleDateString('en-CA', {
+                  timeZone: 'Asia/Manila'
+                })
               : '';
             const hasChanges =
               currentDate !== transformedData.cashsalesdate ||
@@ -421,9 +450,6 @@ export async function GET(request: NextRequest) {
               updatedCount++;
               savedData.push(updatedRecord[0]);
             } else {
-              // console.log(
-              //   `No-op update skipped for cashsalesid=${transformedData.cashsalesid}`
-              // );
             }
           } else {
             // Insert new record
@@ -466,46 +492,112 @@ export async function GET(request: NextRequest) {
         const errorMessage = `Error processing record ${itemId}: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`;
-        console.error(errorMessage);
-        console.error('Raw item data:', JSON.stringify(item, null, 2));
+        // console.error(errorMessage);
+        // console.error('Raw item data:', JSON.stringify(item, null, 2));
         errors.push(errorMessage);
       }
     }
 
-          // Save API fetch activity to database (avoid duplicate no-op logs per day)
-      try {
-        const baseDescription = `API Fetch Operation Successful - ${
-          upsert ? 'Upsert' : 'Insert only'
-        } Mode.`;
-        
-        // Include date range in description for manual fetches
-        let activityDescription = customDescription
-          ? `${customDescription} - ${baseDescription}`
-          : baseDescription;
-          
-        // Add date range to description if it's a manual fetch with date range
-         if (customDescription && dateFrom && dateTo) {
-           const formatDateForDisplay = (dateStr: string) => {
-             const date = new Date(dateStr);
-             return date.toLocaleDateString('en-US', {
-               year: 'numeric',
-               month: 'short',
-               day: 'numeric'
-             });
-           };
-           const fromDisplay = formatDateForDisplay(dateFrom);
-           const toDisplay = formatDateForDisplay(dateTo);
-           activityDescription = `${baseDescription} - ${customDescription} (${fromDisplay} to ${toDisplay})`;
-         }
+    // Save API fetch activity to database (avoid duplicate no-op logs per day)
+    try {
+      const baseDescription = `API Fetch Operation Successful - ${
+        upsert ? 'Upsert' : 'Insert only'
+      } Mode.`;
 
-      // Save success activity when there are DB changes.
-      // If a custom description is provided (manual fetch), always log the activity
-      // even when there are no DB changes, so manual runs are visible in history.
-      const shouldSaveActivity = customDescription
-        ? true
-        : savedCount > 0 || updatedCount > 0;
+      // Include date range in description for manual fetches
+      let activityDescription = customDescription
+        ? `${customDescription} - ${baseDescription}`
+        : baseDescription;
+
+      // Add date range to description if it's a manual fetch with date range
+      if (customDescription && dateFrom && dateTo) {
+        const formatDateForDisplay = (dateStr: string) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+        };
+        const fromDisplay = formatDateForDisplay(dateFrom);
+        const toDisplay = formatDateForDisplay(dateTo);
+        activityDescription = `${baseDescription} - ${customDescription} (${fromDisplay} to ${toDisplay})`;
+      }
+
+      // Save success activity when there are NEW changes from the API.
+      // For manual fetches (with customDescription), always log activity regardless of new records.
+      // For automatic fetches, only log when there are new records saved or updated.
+      // Additionally, for automatic fetches, we want to be more strict about what constitutes "new data"
+      const hasChanges = savedCount > 0 || updatedCount > 0;
+      let shouldSaveActivity = customDescription ? true : hasChanges;
+      
+      // For automatic fetches, be more strict - only log if there are actual meaningful changes
+      if (!customDescription) {
+        // If no records were saved or updated, definitely don't log
+        if (!hasChanges) {
+          shouldSaveActivity = false;
+        }
+        // If only "saved" records but no updates, and this is a repeated operation, 
+        // it might be duplicate data being inserted
+        else if (savedCount > 0 && updatedCount === 0) {
+          // Check if we've already logged a similar activity today
+          try {
+            const similarActivity = await db
+              .select({ id: apiactivityTable.id })
+              .from(apiactivityTable)
+              .where(
+                and(
+                  eq(apiactivityTable.datefetched, today),
+                  // Look for activities with similar saved counts
+                  // This is a heuristic to detect duplicate operations
+                )
+              )
+              .limit(5); // Check last 5 activities
+            
+            // If we have multiple activities today with similar patterns, be more cautious
+            if (similarActivity.length >= 2) {
+              // console.log(
+              //   `Multiple similar activities detected today, skipping to prevent duplicate logs`
+              // );
+              shouldSaveActivity = false;
+            }
+          } catch (checkError) {
+            // console.error('Error checking for similar activities:', checkError);
+            // Continue with logging if we can't check
+          }
+        }
+      }
+      
+      // For automatic fetches, check if we already logged a similar activity recently
+      if (!customDescription && hasChanges) {
+        try {
+          const recentActivity = await db
+            .select({ id: apiactivityTable.id })
+            .from(apiactivityTable)
+            .where(
+              and(
+                eq(apiactivityTable.description, activityDescription),
+                eq(apiactivityTable.datefetched, today)
+              )
+            )
+            .limit(1);
+          
+          if (recentActivity.length > 0) {
+            shouldSaveActivity = false;
+            // console.log(
+            //   `Skipping duplicate main activity log for today (similar activity already logged)`
+            // );
+          }
+        } catch (duplicateCheckError) {
+          // console.error('Error checking for duplicate main activity:', duplicateCheckError);
+          // Continue with logging if we can't check for duplicates
+        }
+      }
+      
       if (!shouldSaveActivity) {
-        console.log('Skipping activity log (no DB changes in this run)');
+        // console.log(
+        //   'Skipping activity log (no new records saved or updated, data already exists)'
+        // );
       }
 
       if (shouldSaveActivity) {
@@ -516,9 +608,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log('API Fetch Activity Saved Successfully');
+      // console.log('API Fetch Activity Saved Successfully');
     } catch (activityError) {
-      console.error('Failed to save API fetch activity:', activityError);
+      // console.error('Failed to save API fetch activity:', activityError);
       // Don't fail the main operation if activity logging fails
     }
 
@@ -585,11 +677,160 @@ export async function GET(request: NextRequest) {
         await saveAPIFetchActivity(description, totalMissing, true);
       }
     } catch (validationError) {
-      console.error(
-        'Failed to validate and log skipped cashsalescode:',
-        validationError
-      );
+      // console.error(
+      //   'Failed to validate and log skipped cashsalescode:',
+      //   validationError
+      // );
       // Do not interrupt the main flow
+    }
+
+    // Fetch and save cash sales details if requested
+    let detailsResult = null;
+    if (fetchDetails || autoFetchDetails) {
+      try {
+        // console.log('Starting cash sales details fetch operation...');
+
+        // Use date-based fetching for details, similar to how cash sales are fetched
+        const fromDate = dateFrom || yesterday;
+        const toDate = dateTo || today;
+
+        // Log whether we're using manual dates or default dates
+        if (dateFrom && dateTo) {
+          // console.log(
+          //   `Using MANUAL date range for details: ${fromDate} to ${toDate}`
+          // );
+        } else {
+          // console.log(
+          //   `Using DEFAULT date range for details: ${fromDate} to ${toDate}`
+          // );
+        }
+
+        // For automatic fetches, don't force re-run unless explicitly requested
+        // For manual fetches, allow force re-run
+        const shouldForceDetails = customDescription ? forceDetails : false;
+        
+        detailsResult = await fetchAndSaveCashSalesDetails(fromDate, toDate, {
+          upsert: upsert,
+          batchSize: detailsBatchSize,
+          limit: detailsLimit,
+          force: shouldForceDetails
+        });
+
+        // console.log(
+        //   'Cash sales details fetch operation completed:',
+        //   detailsResult
+        // );
+
+        // Save activity for details fetch only when there are NEW changes
+        // For manual fetches (with customDescription), always log details activity regardless of new records.
+        // For automatic fetches, only log when there are new records saved or updated.
+        if (detailsResult.success) {
+          const newRecords = detailsResult.savedCount || 0;
+          const updatedRecords = detailsResult.updatedCount || 0;
+          const hasDetailsChanges = newRecords > 0 || updatedRecords > 0;
+          const wasAlreadyCompleted = detailsResult.alreadyCompleted || false;
+          
+          // For automatic fetches, be more strict about logging
+          let shouldLogDetails = customDescription ? true : hasDetailsChanges;
+          
+          // Don't log if the operation was already completed (for automatic fetches)
+          if (!customDescription && wasAlreadyCompleted) {
+            shouldLogDetails = false;
+            // console.log(
+            //   'Skipping details fetch activity log (operation already completed previously)'
+            // );
+          }
+          
+          // For automatic fetches, add additional checks to prevent unnecessary logging
+          if (!customDescription) {
+            // If no changes, definitely don't log
+            if (!hasDetailsChanges) {
+              shouldLogDetails = false;
+              // console.log(
+              //   'Skipping details fetch activity log (no new records saved or updated, data already exists)'
+              // );
+            }
+            // If there are changes, check for duplicates
+            else {
+              const formatDateForDisplay = (dateStr: string) => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                });
+              };
+              const fromDisplay = formatDateForDisplay(fromDate);
+              const toDisplay = formatDateForDisplay(toDate);
+              const detailsDescriptionPattern = `CashSales Details - (${fromDisplay} to ${toDisplay}) - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
+              
+              try {
+                const recentActivity = await db
+                  .select({ id: apiactivityTable.id })
+                  .from(apiactivityTable)
+                  .where(
+                    and(
+                      eq(apiactivityTable.description, detailsDescriptionPattern),
+                      eq(apiactivityTable.datefetched, today)
+                    )
+                  )
+                  .limit(1);
+                
+                if (recentActivity.length > 0) {
+                  shouldLogDetails = false;
+                  // console.log(
+                  //   `Skipping duplicate details activity log for today (similar activity already logged)`
+                  // );
+                }
+              } catch (duplicateCheckError) {
+                // console.error('Error checking for duplicate details activity:', duplicateCheckError);
+                // Continue with logging if we can't check for duplicates
+              }
+            }
+          }
+          
+          if (shouldLogDetails) {
+            const formatDateForDisplay = (dateStr: string) => {
+              const date = new Date(dateStr);
+              return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            };
+            const fromDisplay = formatDateForDisplay(fromDate);
+            const toDisplay = formatDateForDisplay(toDate);
+            const manualPrefix = customDescription ? 'Manual Fetch - ' : '';
+            const detailsDescription = `CashSales Details - ${manualPrefix} (${fromDisplay} to ${toDisplay}) - ${detailsResult.savedCount} saved, ${detailsResult.updatedCount} updated`;
+            await saveAPIFetchActivity(detailsDescription, newRecords + updatedRecords, true);
+          }
+        } else {
+          await saveAPIFetchActivity(
+            'Cash Sales Details Fetch Failed',
+            0,
+            false
+          );
+        }
+
+        // console.log(
+        //   'Cash sales details operation completed:',
+        //   detailsResult.message
+        // );
+      } catch (detailsError) {
+        // console.error('Error in cash sales details fetch:', detailsError);
+        detailsResult = {
+          success: false,
+          message:
+            detailsError instanceof Error
+              ? detailsError.message
+              : 'Unknown error occurred',
+          savedCount: 0,
+          updatedCount: 0
+        };
+
+        // Save activity for failed details fetch
+        await saveAPIFetchActivity('Cash Sales Details Fetch Failed', 0, false);
+      }
     }
 
     const responseData: FetchAndSaveResponse = {
@@ -598,54 +839,56 @@ export async function GET(request: NextRequest) {
         apiData.length - validRecords.length
       } Invalid Skipped). Saved: ${savedCount}, Updated: ${updatedCount}${
         errors.length > 0 ? `, Errors: ${errors.length}` : ''
-      }`,
+      }${detailsResult ? ` | Details: ${detailsResult.message}` : ''}`,
       savedCount,
       updatedCount,
-      data: savedData
+      data: savedData,
+      alreadyCompleted: detailsResult?.alreadyCompleted || false,
+      detailsResult: detailsResult
     };
 
     if (errors.length > 0) {
       responseData.errors = errors;
     }
 
-    console.log('Operation Completed:', responseData.message);
+    // console.log('Operation Completed:', responseData.message);
 
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
-    console.error('API Error:', error);
+    // console.error('API Error:', error);
 
     // Save activity for failed operation
     try {
       const baseFailDesc = `API Fetch Operation Failed - ${
         error instanceof Error ? error.message : 'Unknown error'
       }`;
-      
+
       // Include date range in description for manual fetches
       let failDescription = customDescription
         ? `${customDescription} - ${baseFailDesc}`
         : baseFailDesc;
-        
-             // Add date range to description if it's a manual fetch with date range
-       if (customDescription && dateFrom && dateTo) {
-         const formatDateForDisplay = (dateStr: string) => {
-           const date = new Date(dateStr);
-           return date.toLocaleDateString('en-US', {
-             year: 'numeric',
-             month: 'short',
-             day: 'numeric'
-           });
-         };
-         const fromDisplay = formatDateForDisplay(dateFrom);
-         const toDisplay = formatDateForDisplay(dateTo);
-         failDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseFailDesc}`;
-       }
-      
+
+      // Add date range to description if it's a manual fetch with date range
+      if (customDescription && dateFrom && dateTo) {
+        const formatDateForDisplay = (dateStr: string) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+        };
+        const fromDisplay = formatDateForDisplay(dateFrom);
+        const toDisplay = formatDateForDisplay(dateTo);
+        failDescription = `${customDescription} (${fromDisplay} to ${toDisplay}) - ${baseFailDesc}`;
+      }
+
       await saveAPIFetchActivity(failDescription, 0, false);
     } catch (activityError) {
-      console.error(
-        'Failed To Save API Fetch Activity For Error:',
-        activityError
-      );
+      // console.error(
+      //   'Failed To Save API Fetch Activity For Error:',
+      //   activityError
+      // );
     }
 
     return NextResponse.json(

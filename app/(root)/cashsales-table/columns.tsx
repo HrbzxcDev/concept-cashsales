@@ -1,8 +1,6 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-// import { CellAction } from './cell-action';
-// import { Checkbox } from '@/components/ui/checkbox';
 
 export type cashsales = {
   id: string;
@@ -13,25 +11,6 @@ export type cashsales = {
 };
 
 export const Cashsalescolumns: ColumnDef<cashsales>[] = [
-  // {
-  //   id: 'select',
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={table.getIsAllPageRowsSelected()}
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //     />
-  //   ),
-  //   enableSorting: true,
-  //   enableHiding: true
-  // },
 
   {
     accessorKey: 'cashsalesdate',
@@ -57,8 +36,5 @@ export const Cashsalescolumns: ColumnDef<cashsales>[] = [
     accessorKey: 'stocklocation',
     header: () => <div className="text-left">Stock Location</div>
   }
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => <CellAction data={row.original} />
-  // }
+
 ];

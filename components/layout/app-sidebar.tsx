@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -29,25 +30,28 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
-import { ChevronRight, ChevronsUpDown } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
-import SearchInput from '../ui/search-input';
+import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
 import ThemeToggle from './ThemeToggle/theme-toggle';
 
 export const company = {
   name: 'Concept CashSales',
   logo: () => (
-    <img
+    <Image
       src="/Logo.ico"
-      alt="Concept CashSales Logo"
+      alt="CashSales Logo"
+      width={32}
+      height={32}
       className="h-8 w-8"
     />
   ),
-  version: 'Beta (3.1.4)'
+  version: 'Beta (3.5.2)'
 };
 
 export default function AppSidebar({
@@ -55,18 +59,16 @@ export default function AppSidebar({
 }: {
   children: React.ReactNode;
 }) {
-  // const AppSidebar = async ({ children }: { children: ReactNode }) => {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
-  // Only render after first client-side mount
+  const { isFetching } = useAutoFetch();
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) {
-    return null; // or a loading skeleton
+    return null;
   }
-  // if (session)
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -162,60 +164,8 @@ export default function AppSidebar({
                         hrbzxcdev@gmail.com
                       </span>
                     </div>
-                    {/* <ChevronsUpDown className="ml-auto size-4" /> */}
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
-                {/* <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                  side="bottom"
-                  align="end"
-                  sideOffset={4}
-                > */}
-                {/* <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage
-                          src={session?.user?.image || ''}
-                          alt={session?.user?.name || ''}
-                        />
-                        <AvatarFallback className="rounded-lg">
-                          {session?.user?.name?.slice(0, 2)?.toUpperCase() ||
-                            'CN'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">
-                          {session?.user?.name || ''}
-                        </span>
-                        <span className="truncate text-xs">
-                          {' '}
-                          {session?.user?.email || ''}
-                        </span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel> */}
-                {/* <DropdownMenuSeparator /> */}
-
-                {/* <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <BadgeCheck />
-                      Account
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <CreditCard />
-                      Billing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Bell />
-                      Notifications
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup> */}
-                {/* <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut />
-                    Log out
-                  </DropdownMenuItem> */}
-                {/* </DropdownMenuContent> */}
               </DropdownMenu>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -229,14 +179,22 @@ export default function AppSidebar({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumbs />
           </div>
-          <div className=" hidden w-1/3 items-center gap-2 px-4 md:flex ">
-            <SearchInput />
-          </div>
+          {isFetching ? (
+            <div className="hidden items-center gap-2 px-4 md:flex ">
+              <Badge
+                variant="outline"
+                className="border-primary/20 bg-primary/10 pb-2 pl-4 pr-4 pt-2 text-primary"
+              >
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Fetching Data...
+              </Badge>
+            </div>
+          ) : null}
           <div className="flex items-center gap-2 px-4">
             <ThemeToggle />
           </div>
         </header>
-        {/* page main content */}
+        {/* Page Main Content */}
         {children}
       </SidebarInset>
     </SidebarProvider>

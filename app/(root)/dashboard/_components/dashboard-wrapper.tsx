@@ -7,19 +7,45 @@ import {
   gettotaltrans,
   gettotalbranch,
   getCashsalesData,
-  getPercentageChangeTotalTransaction
+  getCashsalesDetailsData,
+  gettotalitemsquantity,
+  getPercentageChangeTotalTransaction,
+  getPercentageChangeTotalItemsQuantity,
+  getTotalNetAmount,
+  getTotalDiscount,
+  getMonthlySalesAndDiscountData,
+  getWeeklySalesAndDiscountData,
+  getDailySalesAndDiscountData,
+  getTop5ItemsByQuantity
 } from '@/actions/getdata';
 
 interface DashboardData {
   totalTransactions: number;
   totalBranch: number;
+  totalItemsQuantity: number;
+  totalNetAmount: number;
+  totalDiscount: number;
+  monthlySalesAndDiscountData: any[];
+  weeklySalesAndDiscountData: any[];
+  dailySalesAndDiscountData: any[];
   cashsalesData: any[];
+  cashsalesDetailsData: any[];
   percentageChangeData: {
     totalTransactions: number;
     yesterdayTransactions: number;
     percentage: number;
     yesterdayDate: string;
   };
+  percentageChangeDataItemsQuantity: {
+    totalItemsQuantity: number;
+    yesterdayItemsQuantity: number;
+    percentage: number;
+    yesterdayDate: string;
+  };
+  top5ItemsByQuantity: {
+    stockcode: string;
+    totalQuantity: number;
+  }[];
 }
 
 export default function DashboardWrapper() {
@@ -30,26 +56,56 @@ export default function DashboardWrapper() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Fetching Dashboard Data...');
-      
-      const [totalTransactions, totalBranch, cashsalesData, percentageChangeData] =
-        await Promise.all([
-          gettotaltrans(),
-          gettotalbranch(),
-          getCashsalesData(),
-          getPercentageChangeTotalTransaction()
-        ]);
+      // console.log('🔄 Fetching Dashboard Data...');
+
+      const [
+        totalTransactions,
+        totalBranch,
+        totalItemsQuantity,
+        totalNetAmount,
+        totalDiscount,
+        monthlySalesAndDiscountData,
+        weeklySalesAndDiscountData,
+        dailySalesAndDiscountData,
+        cashsalesData,
+        cashsalesDetailsData,
+        percentageChangeData,
+        percentageChangeDataItemsQuantity,
+        top5ItemsByQuantity
+      ] = await Promise.all([
+        gettotaltrans(),
+        gettotalbranch(),
+        gettotalitemsquantity(),
+        getTotalNetAmount(),
+        getTotalDiscount(),
+        getMonthlySalesAndDiscountData(),
+        getWeeklySalesAndDiscountData(),
+        getDailySalesAndDiscountData(),
+        getCashsalesData(),
+        getCashsalesDetailsData(),
+        getPercentageChangeTotalTransaction(),
+        getPercentageChangeTotalItemsQuantity(),
+        getTop5ItemsByQuantity()
+      ]);
 
       setData({
         totalTransactions,
         totalBranch,
+        totalItemsQuantity: Number(totalItemsQuantity),
+        totalNetAmount,
+        totalDiscount,
+        monthlySalesAndDiscountData,
+        weeklySalesAndDiscountData,
+        dailySalesAndDiscountData,
         cashsalesData,
-        percentageChangeData
+        cashsalesDetailsData,
+        percentageChangeData,
+        percentageChangeDataItemsQuantity,
+        top5ItemsByQuantity
       });
-      
-      console.log('✅ Dashboard data updated successfully');
+
     } catch (error) {
-      console.error('❌ Error fetching Dashboard Data:', error);
+      // console.error('❌ Error fetching Dashboard Data:', error);
     } finally {
       setLoading(false);
     }
@@ -63,16 +119,16 @@ export default function DashboardWrapper() {
   // Refresh data when auto-fetch triggers a refresh
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('🔄 Auto-fetch triggered Dashboard refresh');
+      // console.log('🔄 Auto-fetch triggered Dashboard refresh');
       fetchData();
     }
   }, [refreshTrigger]);
 
   if (loading && !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
           <p className="text-muted-foreground">Loading Dashboard Data...</p>
         </div>
       </div>
@@ -83,15 +139,26 @@ export default function DashboardWrapper() {
   if (loading && data) {
     return (
       <div className="relative">
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full border shadow-sm">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 shadow-sm backdrop-blur-sm">
+          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
           <span className="text-xs text-muted-foreground">Refreshing...</span>
         </div>
         <OverViewPage
           totalTransactions={data.totalTransactions}
           totalBranch={data.totalBranch}
+          totalItemsQuantity={data.totalItemsQuantity}
+          totalNetAmount={data.totalNetAmount}
+          totalDiscount={data.totalDiscount}
+          monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}  
+          weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
+          dailySalesAndDiscountData={data.dailySalesAndDiscountData}
           cashsalesData={data.cashsalesData}
+          cashsalesDetailsData={data.cashsalesDetailsData}
           percentageChangeData={data.percentageChangeData}
+          percentageChangeDataItemsQuantity={
+            data.percentageChangeDataItemsQuantity
+          }
+          top5ItemsByQuantity={data.top5ItemsByQuantity}
         />
       </div>
     );
@@ -99,20 +166,30 @@ export default function DashboardWrapper() {
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground">Failed to Load Dashboard Data</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center gap-2 flex flex-col">
+          <p className="text-muted-foreground">Failed to Load Dashboard Data...</p>
+          <p className="text-muted-foreground">Please Try Again Later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <OverViewPage
-      totalTransactions={data.totalTransactions}
-      totalBranch={data.totalBranch}
-      cashsalesData={data.cashsalesData}
-      percentageChangeData={data.percentageChangeData}
-    />
+            <OverViewPage
+          totalTransactions={data.totalTransactions}
+          totalBranch={data.totalBranch}
+          totalItemsQuantity={data.totalItemsQuantity}
+          totalNetAmount={data.totalNetAmount}
+          totalDiscount={data.totalDiscount}
+          monthlySalesAndDiscountData={data.monthlySalesAndDiscountData}
+          weeklySalesAndDiscountData={data.weeklySalesAndDiscountData}
+          dailySalesAndDiscountData={data.dailySalesAndDiscountData}
+          cashsalesData={data.cashsalesData}
+          cashsalesDetailsData={data.cashsalesDetailsData}
+          percentageChangeData={data.percentageChangeData}
+          percentageChangeDataItemsQuantity={data.percentageChangeDataItemsQuantity}
+          top5ItemsByQuantity={data.top5ItemsByQuantity}
+        />
   );
 }
