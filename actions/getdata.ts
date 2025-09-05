@@ -14,7 +14,6 @@ export async function gettotaltrans() {
 
     return result[0]?.count || 0;
   } catch (error) {
-    // console.error('Error getting total transactions:', error);
     return 0;
   }
 }
@@ -38,7 +37,6 @@ export async function gettotalbranch() {
 
     return result[0]?.count || 0;
   } catch (error) {
-    // console.error('Error getting total unique branches:', error);
     return 0;
   }
 }
@@ -54,14 +52,12 @@ export async function getCashsalesData() {
       );
     return result;
   } catch (error) {
-    // console.error('Error getting cashsales data:', error);
     return [];
   }
 }
 
 export async function getCashsalesDetailsData() {
   try {
-    // console.log('🔍 Fetching cashsales details data from database...');
     const result = await db
       .select({
         cashsalesdate: cashsalesdetailsTable.cashsalesdate,
@@ -70,33 +66,8 @@ export async function getCashsalesDetailsData() {
       .from(cashsalesdetailsTable)
       .orderBy(desc(cashsalesdetailsTable.cashsalesdate));
 
-    // console.log('📊 Database result length:', result?.length || 0);
-    // console.log('📊 Database result sample:', result?.slice(0, 3));
-    // console.log(
-    //   '📊 Total quantity sum:',
-    //   result?.reduce((sum, row) => sum + Number(row.quantity || 0), 0) || 0
-    // );
-
-    // Check for unique dates
-    // const uniqueDates = new Set(
-    //   result?.map((row) => row.cashsalesdate?.toString()) || []
-    // );
-    // console.log('📅 Unique dates in database:', Array.from(uniqueDates).sort());
-    // console.log('📅 Number of unique dates:', uniqueDates.size);
-
-    // Check quantity distribution
-    // const quantities = result?.map((row) => Number(row.quantity || 0)) || [];
-    // console.log('📊 Quantity distribution:', {
-    //   min: Math.min(...quantities),
-    //   max: Math.max(...quantities),
-    //   avg: Math.round(
-    //     quantities.reduce((sum, qty) => sum + qty, 0) / quantities.length
-    //   )
-    // });
-
     return result;
   } catch (error) {
-    console.error('❌ Error getting cashsales details data:', error);
     return [];
   }
 }
@@ -114,7 +85,6 @@ export async function getTransactionCountPerLocation() {
 
     return result;
   } catch (error) {
-    // console.error('Error getting transaction count per location:', error);
     return [];
   }
 }
@@ -160,7 +130,6 @@ export async function getPercentageChangeTotalTransaction() {
       yesterdayDate: yesterdayString
     };
   } catch (error) {
-    // console.error('Error getting transaction percentage from yesterday:', error);
     return {
       totalTransactions: 0,
       yesterdayTransactions: 0,
@@ -203,9 +172,6 @@ export async function getPercentageChangeTotalItemsQuantity() {
 
     // Calculate percentage
     const percentage = totalCount > 0 ? (yesterdayCount / totalCount) * 100 : 0;
-    // console.log('totalCount', totalCount);
-    // console.log('yesterdayCount', yesterdayCount);
-    // console.log('percentage', percentage);
 
     return {
       totalItemsQuantity: totalCount,
@@ -214,7 +180,6 @@ export async function getPercentageChangeTotalItemsQuantity() {
       yesterdayDate: yesterdayString
     };
   } catch (error) {
-    // console.error('Error getting transaction percentage from yesterday:', error);
     return {
       totalItemsQuantity: 0,
       yesterdayItemsQuantity: 0,
@@ -238,7 +203,6 @@ export async function getDailyTransactionPerLocation() {
 
     return result;
   } catch (error) {
-    // console.error('Error getting daily transactions per location:', error);
     return [];
   }
 }
@@ -271,7 +235,6 @@ export async function getRecentApiFetches(limit: number = 0) {
       count: Number(row.count as unknown as number)
     }));
   } catch (error) {
-    // console.error('Error getting recent API fetches:', error);
     return [];
   }
 }
@@ -284,7 +247,6 @@ export async function getTotalNetAmount() {
 
     return Number(result[0]?.totalNetAmount) || 0;
   } catch (error) {
-    console.error('Error getting total net amount:', error);
     return 0;
   }
 }
@@ -297,7 +259,6 @@ export async function getTotalDiscount() {
 
     return Number(result[0]?.totalDiscount) || 0;
   } catch (error) {
-    console.error('Error getting total discount:', error);
     return 0;
   }
 }
@@ -330,7 +291,6 @@ export async function getDailySalesAndDiscountData() {
       };
     });
   } catch (error) {
-    console.error('Error getting daily sales and discount data:', error);
     return [];
   }
 }
@@ -348,8 +308,6 @@ export async function getWeeklySalesAndDiscountData() {
       .from(cashsalesdetailsTable)
       .groupBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`)
       .orderBy(sql`DATE_TRUNC('week', ${cashsalesdetailsTable.cashsalesdate})`);
-
-    // console.log('📊 Weekly data result:', result);
 
     return result.map((row) => {
       // Format the date range as MM/DD-MM/DD
@@ -372,8 +330,6 @@ export async function getWeeklySalesAndDiscountData() {
       };
     });
   } catch (error) {
-    console.error('Error getting weekly sales and discount data:', error);
-
     // Fallback: try with a different approach for databases that don't support DATE_TRUNC
     try {
       const fallbackResult = await db
@@ -390,8 +346,6 @@ export async function getWeeklySalesAndDiscountData() {
         .orderBy(
           sql`DATE(${cashsalesdetailsTable.cashsalesdate} - INTERVAL '6 days')`
         );
-
-      // console.log('📊 Weekly data fallback result:', fallbackResult);
 
       return fallbackResult.map((row) => {
         // Format the date range as MM/DD-MM/DD
@@ -414,7 +368,6 @@ export async function getWeeklySalesAndDiscountData() {
         };
       });
     } catch (fallbackError) {
-      console.error('Error in fallback weekly data query:', fallbackError);
       return [];
     }
   }
@@ -442,7 +395,6 @@ export async function getMonthlySalesAndDiscountData() {
       discount: Number(row.discount) || 0
     }));
   } catch (error) {
-    console.error('Error getting monthly sales and discount data:', error);
     return [];
   }
 }
@@ -464,12 +416,9 @@ export async function getTop5ItemsByQuantity() {
       totalQuantity: Number(item.totalQuantity || 0)
     }));
   } catch (error) {
-    console.error('❌ Error getting top 5 items by quantity:', error);
     return [];
   }
 }
-
-
 export interface CashSalesDetailsData {
   totalCount: number;
   data: any[];
@@ -496,7 +445,6 @@ export async function getCashSalesDetailsDataWithCount(): Promise<CashSalesDetai
         asc(cashsalesdetailsTable.numbering)
       );
   } catch (error) {
-    console.error('Error fetching cash sales details:', error);
     throw new Error('Failed to fetch cash sales details data');
   }
 
@@ -537,7 +485,6 @@ export async function getStockCodeTotals(stockCode: string) {
       transactionCount: Number(item.transactionCount || 0)
     };
   } catch (error) {
-    console.error('❌ Error getting stock code totals:', error);
     return null;
   }
 }
@@ -561,7 +508,6 @@ export async function getStockCodeDailyTransactions(stockCode: string) {
       dailyTransactionCount: Number(item.dailyTransactionCount || 0)
     }));
   } catch (error) {
-    console.error('❌ Error getting stock code daily transactions:', error);
     return [];
   }
 }
@@ -604,7 +550,6 @@ export async function getStockCodeMonthlyTransactions(stockCode: string, month?:
       dailyTransactionCount: Number(item.dailyTransactionCount || 0)
     }));
   } catch (error) {
-    console.error('❌ Error getting stock code monthly transactions:', error);
     return [];
   }
 }

@@ -30,22 +30,24 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
-import { ChevronRight, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
-// Removed SearchInput per request
 import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
 import ThemeToggle from './ThemeToggle/theme-toggle';
 
 export const company = {
   name: 'Concept CashSales',
   logo: () => (
-    <img
+    <Image
       src="/Logo.ico"
-      alt="Concept CashSales Logo"
+      alt="CashSales Logo"
+      width={32}
+      height={32}
       className="h-8 w-8"
     />
   ),
@@ -181,7 +183,7 @@ export default function AppSidebar({
             <div className="hidden items-center gap-2 px-4 md:flex ">
               <Badge
                 variant="outline"
-                className="border-primary/20 bg-primary/10 text-primary pt-2 pb-2 pl-4 pr-4"
+                className="border-primary/20 bg-primary/10 pb-2 pl-4 pr-4 pt-2 text-primary"
               >
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Fetching Data...

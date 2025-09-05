@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   AreaChart,
   XAxis,
-  YAxis,
+  // YAxis,
 } from 'recharts';
 
 import {
@@ -80,7 +80,6 @@ export function DailyTransPerLocation() {
           setChartData(chartDataArray);
         }
       } catch (error) {
-        console.error('Error fetching transaction data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -166,7 +165,6 @@ export function DailyTransPerLocation() {
                       key={location}
                       dataKey={location}
                       type="monotone"
-                      // fill={`url(#gradient-${location})`}
                       fill={chartConfig[location]?.color}
                       fillOpacity={0.1}
                       stroke={chartConfig[location]?.color}

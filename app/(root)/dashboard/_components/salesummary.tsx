@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import {
   ChartContainer,
@@ -154,12 +154,6 @@ export function SalesSummary({
 }) {
   const [timeFilter, setTimeFilter] = useState('daily');
 
-  // Debug logging
-  // console.log('📊 SalesSummary - timeFilter:', timeFilter);
-  // console.log('📊 SalesSummary - dailyData:', dailyData);
-  // console.log('📊 SalesSummary - weeklyData:', weeklyData);
-  // console.log('📊 SalesSummary - monthlyData:', monthlyData);
-
   // Use the appropriate data based on the filter
   const chartData = useMemo(() => {
     if (timeFilter === 'daily') {
@@ -171,18 +165,6 @@ export function SalesSummary({
     }
     return [];
   }, [timeFilter, dailyData, weeklyData, monthlyData]);
-
-  // console.log('📊 SalesSummary - chartData:', chartData);
-
-  // Calculate percentages based on current filter and total net sales
-  // const percentageData = useMemo(() => {
-  //   return calculatePercentageData(chartData, netSales || 0);
-  // }, [chartData, netSales]);
-
-  // Calculate total percentages for current period
-  // const currentPeriodStats = useMemo(() => {
-  //   return calculatePeriodStats(percentageData);
-  // }, [percentageData]);
 
   // Calculate percentage change from previous period
   const percentageChange = useMemo(() => {

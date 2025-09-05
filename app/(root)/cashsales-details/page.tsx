@@ -1,7 +1,7 @@
 import CashSalesDetailsPage from './details-header';
 
 export const metadata = {
-  title: 'Cash Sales Details'
+  title: 'CashSales Details'
 };
 export default function Page() {
   return <CashSalesDetailsPage />;

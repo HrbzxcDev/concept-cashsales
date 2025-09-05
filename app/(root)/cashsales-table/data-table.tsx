@@ -54,7 +54,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Card } from '@/components/ui/card';
 import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
@@ -153,7 +152,7 @@ export function DataTable<TData, TValue>({
         );
         return nameA.localeCompare(nameB);
       });
-  }, [data, dateRange, searchValue]);
+  }, [data, dateRange, searchValue, filterType]);
 
   const table = useReactTable({
     data: filteredData,
@@ -397,7 +396,7 @@ export function DataTable<TData, TValue>({
                     className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <div className="flex items-center gap-2">
-                       <Hash  className="h-4 w-4 text-muted-foreground" />
+                      <Hash className="h-4 w-4 text-muted-foreground" />
                       <span>CashSales Code</span>
                     </div>
                     {filterType === 'cashsalescode' && (
@@ -412,7 +411,7 @@ export function DataTable<TData, TValue>({
                     className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <div className="flex items-center gap-2">
-                    <MapPinHouse  className="h-4 w-4 text-muted-foreground" />
+                      <MapPinHouse className="h-4 w-4 text-muted-foreground" />
                       <span>Stock Location</span>
                     </div>
                     {filterType === 'stocklocation' && (
@@ -653,19 +652,15 @@ export function DataTable<TData, TValue>({
               </div>
             </div>
           )}
-           {detailError && (
-             <div className="py-6 mb-4 text-center">
-               <div className="text-lg text-red-500 mb-4">
-                 {detailError}
-               </div>
-               <div className="flex flex-col items-center justify-center gap-4 text-white">
-               <Unplug className="h-24 w-24" 
-                 strokeWidth={1}
-                 />
-                 <span>Can't Retrieve Data From The Server!</span>
-               </div>
-             </div>
-           )}
+          {detailError && (
+            <div className="mb-4 py-6 text-center">
+              <div className="mb-4 text-lg text-red-500">{detailError}</div>
+              <div className="flex flex-col items-center justify-center gap-4 text-white">
+                <Unplug className="h-24 w-24" strokeWidth={1} />
+                <span>Can&apos;t Retrieve Data From The Server!</span>
+              </div>
+            </div>
+          )}
           {!detailLoading && !detailError && detail && (
             <div className="space-y-6">
               <SummaryTable data={detail} />
@@ -692,7 +687,7 @@ export function DataTable<TData, TValue>({
           {detail && (
             <div className="space-y-4">
               <div className="rounded-md border bg-muted p-4">
-                <pre className="whitespace-pre-wrap text-sm overflow-auto max-h-[60vh]">
+                <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap text-sm">
                   {JSON.stringify(detail, null, 2)}
                 </pre>
               </div>

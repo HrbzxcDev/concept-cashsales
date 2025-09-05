@@ -43,7 +43,6 @@ function formatDate(dateString: string) {
 }
 
 function formatTime(timeString: string) {
-  // Handle HH:MM:SS or HH:MM:SS.sss
   const [h, m, s] = timeString.split(':');
   const date = new Date();
   date.setHours(
@@ -82,7 +81,7 @@ export default function FetchActivity() {
   // Refresh activities when auto-fetch triggers a refresh
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('🔄 Auto-fetch triggered fetch activity refresh');
+      // console.log('🔄 Auto-fetch triggered fetch activity refresh');
       loadActivities();
     }
   }, [refreshTrigger]);
@@ -107,8 +106,8 @@ export default function FetchActivity() {
 
       // Check if the fetch was successful
       if (res.ok) {
-        const result = await res.json();
-        console.log('✅ Manual fetch completed successfully:', result.message);
+        await res.json();
+        // console.log('✅ Manual fetch completed successfully:', result.message);
 
         // Refresh activity list
         await new Promise((r) => setTimeout(r, 300));
@@ -117,15 +116,15 @@ export default function FetchActivity() {
         setManualOpen(false);
 
         // Refresh the window after successful manual fetch
-        console.log('🔄 Refreshing window after successful manual fetch...');
+        // console.log('🔄 Refreshing window after successful manual fetch...');
         setTimeout(() => {
           window.location.reload();
         }, 1000); // 1 second delay to allow for any pending operations
       } else {
-        console.error('❌ Manual fetch failed:', res.status, res.statusText);
+        // console.error('❌ Manual fetch failed:', res.status, res.statusText);
       }
     } catch (e) {
-      console.error('❌ Error during manual fetch:', e);
+      //  console.error('❌ Error during manual fetch:', e);
       // swallow for now; activities will still show previous state
     } finally {
       setSubmitting(false);

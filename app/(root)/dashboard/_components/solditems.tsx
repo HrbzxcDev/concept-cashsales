@@ -71,9 +71,7 @@ export function TopSoldItems({ top5ItemsByQuantity }: TopSoldItemsProps) {
               dataKey="stockcode"
               type="category" 
               tickLine={false}
-            //   tickMargin={1}
               axisLine={false}
-            //   tickFormatter={(value) => value.slice(0, 25) + '...'}
               hide={false}
             />
             <XAxis dataKey="totalQuantity" type="number" hide />
@@ -88,14 +86,6 @@ export function TopSoldItems({ top5ItemsByQuantity }: TopSoldItemsProps) {
               radius={4}
               barSize={30}
             >
-              {/* <LabelList
-                dataKey="stockcode"
-                position="insideLeft"
-                offset={8}
-                className="fill-foreground"
-                fontSize={10}
-                formatter={(value: string) => value.slice(0, 25) + '...'}
-              /> */}
               <LabelList
                 dataKey="totalQuantity"
                 position="right"
@@ -107,14 +97,6 @@ export function TopSoldItems({ top5ItemsByQuantity }: TopSoldItemsProps) {
           </BarChart>
         </ChartContainer>
       </CardContent>
-      {/* <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
-          Top selling items by quantity <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing top 5 items with highest total quantity sold
-        </div>
-      </CardFooter> */}
     </Card>
   );
 }

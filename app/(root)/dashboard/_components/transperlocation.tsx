@@ -68,9 +68,7 @@ export function TransPerLocation() {
   return (
     <Card className="h-full shadow-[5px_5px_5px_rgba(0,0,0,0.2)] ">
       <CardHeader className="flex flex-col space-y-0 border-b py-4 sm:flex-row">
-        {/* <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row"> */}
-
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
+       <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle className="text-lg">
             Transaction Count Per Location
           </CardTitle>
@@ -98,8 +96,6 @@ export function TransPerLocation() {
                 tickLine={false}
                 tickMargin={5}
                 axisLine={false}
-                // angle={-45}
-                // textAnchor="center"
                 height={30}
                 tickFormatter={(value) => {
                   return value.length > 10 ? value.substring(0, 20) : value;

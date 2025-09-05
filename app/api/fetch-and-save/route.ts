@@ -144,18 +144,9 @@ async function saveAPIFetchActivity(
       })
       .returning();
 
-    // console.log('API fetch activity saved:', {
-    //   id: activityRecord[0].id,
-    //   description: activityRecord[0].description,
-    //   count: activityRecord[0].count,
-    //   datefetched: activityRecord[0].datefetched,
-    //   timefetched: activityRecord[0].timefetched,
-    //   status: activityRecord[0].status
-    // });
-
     return activityRecord[0];
   } catch (error) {
-    console.error('Error saving API fetch activity:', error);
+    // console.error('Error saving API fetch activity:', error);
     throw error;
   }
 }
@@ -237,14 +228,14 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
+      // console.error('API Error Response:', errorText);
       throw new Error(
         `HTTP error! status: <span class="text-[#ef4444]">${response.status}</span> - ${errorText}`
       );
     }
 
     const apiData: ExternalAPICashSale[] = await response.json();
-    console.log(`Fetched ${apiData.length} Records From External API`);
+    // console.log(`Fetched ${apiData.length} Records From External API`);
     // console.log(
     //   'Raw API response sample:',
     //   JSON.stringify(apiData.slice(0, 2), null, 2)
@@ -291,15 +282,15 @@ export async function GET(request: NextRequest) {
 
           await saveAPIFetchActivity(noDataDescription, 0, true);
         } else {
-          console.log(
-            `Skipping duplicate no-data activity for ${today} (already logged for automatic fetch)`
-          );
+          // console.log(
+          //   `Skipping duplicate no-data activity for ${today} (already logged for automatic fetch)`
+          // );
         }
       } catch (activityError) {
-        console.error(
-          'Failed to save API fetch activity for empty response:',
-          activityError
-        );
+        // console.error(
+        //   'Failed to save API fetch activity for empty response:',
+        //   activityError
+        // );
       }
 
       return NextResponse.json({
@@ -313,12 +304,6 @@ export async function GET(request: NextRequest) {
 
     // Filter out invalid records (those without cashsalesid)
     const validRecords = apiData.filter((item) => {
-      // console.log('Checking item:', JSON.stringify(item, null, 2));
-      // console.log('Item keys:', Object.keys(item || {}));
-      // console.log('Item cashsalesid:', item?.cashsalesid);
-      // console.log('Item cashsalesid type:', typeof item?.cashsalesid);
-      // console.log('Item cashsalesid trimmed:', item?.cashsalesid?.trim());
-      // Try different possible field names for cashsalesid
       const possibleIdFields = [
         'cashsalesid',
         'id',
@@ -332,27 +317,23 @@ export async function GET(request: NextRequest) {
         const itemAny = item as any;
         if (item && itemAny[field] && String(itemAny[field]).trim() !== '') {
           cashsalesid = String(itemAny[field]).trim();
-          // console.log(`Found cashsalesid in field '${field}':`, cashsalesid);
           break;
         }
       }
-
       const isValid = cashsalesid !== null;
 
-      // console.log('Is valid:', isValid);
-
       if (!isValid) {
-        console.warn(
-          'Skipping invalid record - no valid cashsalesid found:',
-          JSON.stringify(item, null, 2)
-        );
+        // console.warn(
+        //   'Skipping invalid record - no valid cashsalesid found:',
+        //   JSON.stringify(item, null, 2)
+        // );
       }
       return isValid;
     });
 
-    console.log(
-      `Filtered to ${validRecords.length} valid records out of ${apiData.length} total`
-    );
+    // console.log(
+    //   `Filtered to ${validRecords.length} valid records out of ${apiData.length} total`
+    // );
 
     if (validRecords.length === 0) {
       // Save activity for no valid records, but only for manual fetches or if not already logged today
@@ -394,15 +375,15 @@ export async function GET(request: NextRequest) {
 
           await saveAPIFetchActivity(noValidDescription, 0, true);
         } else {
-          console.log(
-            `Skipping duplicate no-valid-records activity for ${today} (already logged for automatic fetch)`
-          );
+          // console.log(
+          //   `Skipping duplicate no-valid-records activity for ${today} (already logged for automatic fetch)`
+          // );
         }
       } catch (activityError) {
-        console.error(
-          'Failed to save API fetch activity for no valid records:',
-          activityError
-        );
+        // console.error(
+        //   'Failed to save API fetch activity for no valid records:',
+        //   activityError
+        // );
       }
 
       return NextResponse.json({
@@ -575,13 +556,13 @@ export async function GET(request: NextRequest) {
             
             // If we have multiple activities today with similar patterns, be more cautious
             if (similarActivity.length >= 2) {
-              console.log(
-                `Multiple similar activities detected today, skipping to prevent duplicate logs`
-              );
+              // console.log(
+              //   `Multiple similar activities detected today, skipping to prevent duplicate logs`
+              // );
               shouldSaveActivity = false;
             }
           } catch (checkError) {
-            console.error('Error checking for similar activities:', checkError);
+            // console.error('Error checking for similar activities:', checkError);
             // Continue with logging if we can't check
           }
         }
@@ -603,20 +584,20 @@ export async function GET(request: NextRequest) {
           
           if (recentActivity.length > 0) {
             shouldSaveActivity = false;
-            console.log(
-              `Skipping duplicate main activity log for today (similar activity already logged)`
-            );
+            // console.log(
+            //   `Skipping duplicate main activity log for today (similar activity already logged)`
+            // );
           }
         } catch (duplicateCheckError) {
-          console.error('Error checking for duplicate main activity:', duplicateCheckError);
+          // console.error('Error checking for duplicate main activity:', duplicateCheckError);
           // Continue with logging if we can't check for duplicates
         }
       }
       
       if (!shouldSaveActivity) {
-        console.log(
-          'Skipping activity log (no new records saved or updated, data already exists)'
-        );
+        // console.log(
+        //   'Skipping activity log (no new records saved or updated, data already exists)'
+        // );
       }
 
       if (shouldSaveActivity) {
@@ -627,9 +608,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log('API Fetch Activity Saved Successfully');
+      // console.log('API Fetch Activity Saved Successfully');
     } catch (activityError) {
-      console.error('Failed to save API fetch activity:', activityError);
+      // console.error('Failed to save API fetch activity:', activityError);
       // Don't fail the main operation if activity logging fails
     }
 
@@ -696,10 +677,10 @@ export async function GET(request: NextRequest) {
         await saveAPIFetchActivity(description, totalMissing, true);
       }
     } catch (validationError) {
-      console.error(
-        'Failed to validate and log skipped cashsalescode:',
-        validationError
-      );
+      // console.error(
+      //   'Failed to validate and log skipped cashsalescode:',
+      //   validationError
+      // );
       // Do not interrupt the main flow
     }
 
@@ -707,7 +688,7 @@ export async function GET(request: NextRequest) {
     let detailsResult = null;
     if (fetchDetails || autoFetchDetails) {
       try {
-        console.log('Starting cash sales details fetch operation...');
+        // console.log('Starting cash sales details fetch operation...');
 
         // Use date-based fetching for details, similar to how cash sales are fetched
         const fromDate = dateFrom || yesterday;
@@ -715,13 +696,13 @@ export async function GET(request: NextRequest) {
 
         // Log whether we're using manual dates or default dates
         if (dateFrom && dateTo) {
-          console.log(
-            `Using MANUAL date range for details: ${fromDate} to ${toDate}`
-          );
+          // console.log(
+          //   `Using MANUAL date range for details: ${fromDate} to ${toDate}`
+          // );
         } else {
-          console.log(
-            `Using DEFAULT date range for details: ${fromDate} to ${toDate}`
-          );
+          // console.log(
+          //   `Using DEFAULT date range for details: ${fromDate} to ${toDate}`
+          // );
         }
 
         // For automatic fetches, don't force re-run unless explicitly requested
@@ -735,10 +716,10 @@ export async function GET(request: NextRequest) {
           force: shouldForceDetails
         });
 
-        console.log(
-          'Cash sales details fetch operation completed:',
-          detailsResult
-        );
+        // console.log(
+        //   'Cash sales details fetch operation completed:',
+        //   detailsResult
+        // );
 
         // Save activity for details fetch only when there are NEW changes
         // For manual fetches (with customDescription), always log details activity regardless of new records.
@@ -755,9 +736,9 @@ export async function GET(request: NextRequest) {
           // Don't log if the operation was already completed (for automatic fetches)
           if (!customDescription && wasAlreadyCompleted) {
             shouldLogDetails = false;
-            console.log(
-              'Skipping details fetch activity log (operation already completed previously)'
-            );
+            // console.log(
+            //   'Skipping details fetch activity log (operation already completed previously)'
+            // );
           }
           
           // For automatic fetches, add additional checks to prevent unnecessary logging
@@ -765,9 +746,9 @@ export async function GET(request: NextRequest) {
             // If no changes, definitely don't log
             if (!hasDetailsChanges) {
               shouldLogDetails = false;
-              console.log(
-                'Skipping details fetch activity log (no new records saved or updated, data already exists)'
-              );
+              // console.log(
+              //   'Skipping details fetch activity log (no new records saved or updated, data already exists)'
+              // );
             }
             // If there are changes, check for duplicates
             else {
@@ -797,12 +778,12 @@ export async function GET(request: NextRequest) {
                 
                 if (recentActivity.length > 0) {
                   shouldLogDetails = false;
-                  console.log(
-                    `Skipping duplicate details activity log for today (similar activity already logged)`
-                  );
+                  // console.log(
+                  //   `Skipping duplicate details activity log for today (similar activity already logged)`
+                  // );
                 }
               } catch (duplicateCheckError) {
-                console.error('Error checking for duplicate details activity:', duplicateCheckError);
+                // console.error('Error checking for duplicate details activity:', duplicateCheckError);
                 // Continue with logging if we can't check for duplicates
               }
             }
@@ -831,12 +812,12 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        console.log(
-          'Cash sales details operation completed:',
-          detailsResult.message
-        );
+        // console.log(
+        //   'Cash sales details operation completed:',
+        //   detailsResult.message
+        // );
       } catch (detailsError) {
-        console.error('Error in cash sales details fetch:', detailsError);
+        // console.error('Error in cash sales details fetch:', detailsError);
         detailsResult = {
           success: false,
           message:
@@ -870,11 +851,11 @@ export async function GET(request: NextRequest) {
       responseData.errors = errors;
     }
 
-    console.log('Operation Completed:', responseData.message);
+    // console.log('Operation Completed:', responseData.message);
 
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
-    console.error('API Error:', error);
+    // console.error('API Error:', error);
 
     // Save activity for failed operation
     try {
@@ -904,10 +885,10 @@ export async function GET(request: NextRequest) {
 
       await saveAPIFetchActivity(failDescription, 0, false);
     } catch (activityError) {
-      console.error(
-        'Failed To Save API Fetch Activity For Error:',
-        activityError
-      );
+      // console.error(
+      //   'Failed To Save API Fetch Activity For Error:',
+      //   activityError
+      // );
     }
 
     return NextResponse.json(

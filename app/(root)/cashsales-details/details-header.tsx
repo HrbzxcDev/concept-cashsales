@@ -1,6 +1,4 @@
 import PageContainer from '@/components/layout/page-container';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { DataTable } from './data-table';
 import { CashsalesdetailsColumns } from './columns';
 import { getCashSalesDetailsDataWithCount } from '@/actions/getdata';
@@ -9,25 +7,24 @@ type CashSalesDetailsListingPageProps = {};
 
 export default async function CashSalesDetailsListingPage({}: CashSalesDetailsListingPageProps) {
   //* Fetching cash sales details using the getdata function
-  let totalCashSalesDetails = 0;
   let cashsalesdetailsData: any[] = [];
 
   try {
-    const { totalCount, data } = await getCashSalesDetailsDataWithCount();
-    totalCashSalesDetails = totalCount;
+    const { data } = await getCashSalesDetailsDataWithCount();
     cashsalesdetailsData = data;
   } catch (error) {
-    console.error('Error fetching cash sales details:', error);
     // Handle error appropriately - you might want to show a toast or error message
   }
 
   return (
     <PageContainer scrollable>
       <div className="space-y-0">
-        <div className="flex place-items-end justify-between">
-        </div>
+        <div className="flex place-items-end justify-between"></div>
         <div className="flex items-start justify-between"></div>
-        <DataTable columns={CashsalesdetailsColumns} data={cashsalesdetailsData} />
+        <DataTable
+          columns={CashsalesdetailsColumns}
+          data={cashsalesdetailsData}
+        />
       </div>
     </PageContainer>
   );

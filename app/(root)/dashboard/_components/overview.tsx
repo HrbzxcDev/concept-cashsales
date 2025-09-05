@@ -63,28 +63,9 @@ export default function Overview({
   percentageChangeDataItemsQuantity,
   top5ItemsByQuantity
 }: OverviewProps) {
-  // console.log(
-  //   '🎯 Overview component received cashsalesDetailsData:',
-  //   cashsalesDetailsData?.length || 0
-  // );
-  // console.log(
-  //   '🎯 Overview component received totalItemsQuantity:',
-  //   totalItemsQuantity
-  // );
-  // Use real percentage change data instead of mock functions
+
   const getPercentageChangeTransactions = () => percentageChangeData.percentage;
   const getPercentageChangeActivity = () => 0.0; // Keep this as mock for now
-
-  // Function to format date to readable format
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: '2-digit'
-    });
-  };
 
   // Build compact sparkline data (daily counts for the last `days` days)
   function getDailyCountsData(rows: any[], days = 30) {
@@ -112,23 +93,8 @@ export default function Overview({
     return result;
   }
 
-  // Build a day-over-day percentage change series from daily counts
-  // function getPercentageSeries(rows: any[], days = 30) {
-  //   const daily = getDailyCountsData(rows, days + 1); // need previous day to compute first change
-  //   const series = [] as { date: string; value: number }[];
-  //   for (let i = 1; i < daily.length; i += 1) {
-  //     const prev = daily[i - 1].value;
-  //     const curr = daily[i].value;
-  //     const pct = prev === 0 ? 0 : ((curr - prev) / prev) * 100;
-  //     series.push({ date: daily[i].date, value: Number(pct.toFixed(2)) });
-  //   }
-  //   return series;
-  // }
-
   // Build daily total items sold (quantity) data for sparkline
   function getDailyItemsSoldData(rows: any[], days = 30) {
-    // console.log('🔍 getDailyItemsSoldData - Input rows:', rows?.length || 0);
-    // console.log('🔍 getDailyItemsSoldData - Sample rows:', rows?.slice(0, 3));
 
     const pad = (n: number) => String(n).padStart(2, '0');
     const toKey = (d: Date) =>
@@ -149,25 +115,13 @@ export default function Overview({
       const rowQuantity = Number(row.quantity) || 0;
       quantities.set(key, currentQuantity + rowQuantity);
 
-      // console.log(
-      //   `📊 Date: ${key}, Row Qty: ${rowQuantity}, Running Total: ${
-      //     currentQuantity + rowQuantity
-      //   }`
-      // );
     }
-
-    // console.log('📈 Quantities Map:', Object.fromEntries(quantities));
-    // console.log('📅 Unique dates found:', Array.from(uniqueDates).sort());
-    // console.log('📅 Number of unique dates:', uniqueDates.size);
 
     const result: { date: string; value: number }[] = [];
     const today = new Date();
 
     // If we have very few unique dates, create a more realistic distribution
     if (uniqueDates.size < 5) {
-      // console.log(
-      //   '⚠️ Very few unique dates found, creating realistic distribution'
-      // );
 
       // Get the total quantity and distribute it across the last 30 days
       const totalQuantity = Array.from(quantities.values()).reduce(
@@ -198,17 +152,6 @@ export default function Overview({
         result.push({ date: key, value });
       }
     }
-
-    // console.log('🎯 Final sparkline data:', result);
-    // console.log('🎯 Sparkline data length:', result.length);
-    // console.log('🎯 Sparkline data sample:', result.slice(0, 5));
-    // console.log('🎯 Sparkline value range:', {
-    //   min: Math.min(...result.map((r) => r.value)),
-    //   max: Math.max(...result.map((r) => r.value)),
-    //   avg: Math.round(
-    //     result.reduce((sum, r) => sum + r.value, 0) / result.length
-    //   )
-    // });
 
     return result;
   }

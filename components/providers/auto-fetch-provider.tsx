@@ -54,7 +54,7 @@ export function AutoFetchProvider({
       setIsFetching(true);
       setFetchError(null);
 
-      console.log('🔄 Triggering fetch-and-save...');
+      // console.log('🔄 Triggering fetch-and-save...');
 
       const response = await fetch(
         '/api/fetch-and-save?limit=1000&upsert=true',
@@ -74,40 +74,40 @@ export function AutoFetchProvider({
 
       if (result.success) {
         if (result.alreadyCompleted) {
-          console.log('ℹ️ Fetch skipped - already completed:', result.message);
-          console.log(
-            `📊 Previous run: Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
-          );
+          // console.log('ℹ️ Fetch skipped - already completed:', result.message);
+          // console.log(
+          //   `📊 Previous run: Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
+          // );
           setLastFetchTime(new Date());
         } else {
-          console.log('✅ Fetch completed successfully:', result.message);
-          console.log(
-            `📊 Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
-          );
+          // console.log('✅ Fetch completed successfully:', result.message);
+          // console.log(
+          //   `📊 Saved: ${result.savedCount}, Updated: ${result.updatedCount}`
+          // );
           setLastFetchTime(new Date());
 
           // Trigger refresh of all components after successful fetch
           if (result.savedCount > 0 || result.updatedCount > 0) {
-            console.log(
-              '🔄 Triggering component refresh due to data changes...'
-            );
+            // console.log(
+            //   '🔄 Triggering component refresh due to data changes...'
+            // );
             triggerRefresh();
 
             // Refresh the window after successful data fetch
-            console.log('🔄 Refreshing window after successful data fetch...');
+            // console.log('🔄 Refreshing window after successful data fetch...');
             setTimeout(() => {
               window.location.reload();
             }, 1000); // 1 second delay to allow for any pending operations
           }
         }
       } else {
-        console.warn('⚠️ Fetch completed with warnings:', result.message);
+        // console.warn('⚠️ Fetch completed with warnings:', result.message);
         setFetchError(result.message);
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('❌ Fetch failed:', errorMessage);
+      // console.error('❌ Fetch failed:', errorMessage);
       setFetchError(errorMessage);
     } finally {
       setIsFetching(false);

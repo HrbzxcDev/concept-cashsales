@@ -56,7 +56,7 @@ export default function DashboardWrapper() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Fetching Dashboard Data...');
+      // console.log('🔄 Fetching Dashboard Data...');
 
       const [
         totalTransactions,
@@ -104,18 +104,8 @@ export default function DashboardWrapper() {
         top5ItemsByQuantity
       });
 
-      // console.log('✅ Dashboard data updated successfully');
-      // console.log(
-      //   '📊 cashsalesDetailsData length:',
-      //   cashsalesDetailsData?.length || 0
-      // );
-      // console.log(
-      //   '📊 cashsalesDetailsData sample:',
-      //   cashsalesDetailsData?.slice(0, 3)
-      // );
-      // console.log('📊 totalItemsQuantity:', totalItemsQuantity);
     } catch (error) {
-      console.error('❌ Error fetching Dashboard Data:', error);
+      // console.error('❌ Error fetching Dashboard Data:', error);
     } finally {
       setLoading(false);
     }
@@ -129,7 +119,7 @@ export default function DashboardWrapper() {
   // Refresh data when auto-fetch triggers a refresh
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('🔄 Auto-fetch triggered Dashboard refresh');
+      // console.log('🔄 Auto-fetch triggered Dashboard refresh');
       fetchData();
     }
   }, [refreshTrigger]);

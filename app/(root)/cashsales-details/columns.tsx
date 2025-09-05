@@ -30,7 +30,6 @@ export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
   {
     accessorKey: 'cashsalesdate',
     header: () => <div className="text-center">CashSales Date</div>,
-    // size: 140,
     cell: ({ row }) => {
       const date = new Date(row.getValue('cashsalesdate'));
       return date.toLocaleDateString('en-PH', {
@@ -182,12 +181,4 @@ export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
       return <div className="text-center font-medium">{project}</div>;
     }
   },
-  // {
-  //   accessorKey: 'glaccount',
-  //   header: () => <div className="text-left">GL Account</div>
-  // },
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => <CellAction data={row.original} />
-  // }
 ];

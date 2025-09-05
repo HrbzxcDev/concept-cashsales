@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
 import {
   Table,
   TableBody,
@@ -45,8 +44,6 @@ import {
   Braces,
   Unplug,
   ShoppingBasket,
-  TrendingUp,
-  TrendingDown,
   Info
 } from 'lucide-react';
 import * as React from 'react';
@@ -60,13 +57,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type {
   CashSaleDetailResponse,
   CashSaleDetailLine
@@ -74,9 +65,9 @@ import type {
 import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
 import {
   getStockCodeTotals,
-  getStockCodeDailyTransactions,
   getStockCodeMonthlyTransactions
 } from '@/actions/getdata';
+import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -118,9 +109,6 @@ export function DataTable<TData, TValue>({
     to: new Date()
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
-  const [filterType, setFilterType] = React.useState<
-    'all' | 'cashsalescode' | 'stockcode' | 'description'
-  >('all');
 
   const filteredData = React.useMemo(() => {
     return data
@@ -139,22 +127,12 @@ export function DataTable<TData, TValue>({
 
         const searchLower = searchValue.toLowerCase();
 
-        if (filterType === 'cashsalescode') {
-          return (item as any).cashsalescode
-            .toLowerCase()
-            .includes(searchLower);
-        } else if (filterType === 'stockcode') {
-          return (item as any).stockcode.toLowerCase().includes(searchLower);
-        } else if (filterType === 'description') {
-          return (item as any).description.toLowerCase().includes(searchLower);
-        } else {
-          // Search in both fields when filter type is 'all'
-          return (
-            (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
-            (item as any).stockcode.toLowerCase().includes(searchLower) ||
-            (item as any).description.toLowerCase().includes(searchLower)
-          );
-        }
+        // Search in all fields
+        return (
+          (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
+          (item as any).stockcode.toLowerCase().includes(searchLower) ||
+          (item as any).description.toLowerCase().includes(searchLower)
+        );
       })
       .sort((a, b) => {
         const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
@@ -197,7 +175,7 @@ export function DataTable<TData, TValue>({
       setStockCodeTotals(totals);
       setDailyTransactionData(monthlyData);
     } catch (err) {
-      console.error('Error fetching stock code data:', err);
+      // console.error('Error fetching stock code data:', err);
       setStockCodeTotals(null);
       setDailyTransactionData([]);
     } finally {
@@ -217,7 +195,7 @@ export function DataTable<TData, TValue>({
       );
       setDailyTransactionData(monthlyData);
     } catch (err) {
-      console.error('Error fetching monthly data:', err);
+      // console.error('Error fetching monthly data:', err);
       setDailyTransactionData([]);
     } finally {
       setDailyTransactionLoading(false);
@@ -328,13 +306,6 @@ export function DataTable<TData, TValue>({
           })
         : n ?? '-';
 
-    const handleViewFullDetails = () => {
-      if (rowData) {
-        setSelectedRow(rowData);
-        setDialogOpen(true);
-      }
-    };
-
     const hasData = rowData && Object.keys(rowData).length > 0;
     const hasStockCodeTotals = stockCodeTotals && !stockCodeTotalsLoading;
 
@@ -435,7 +406,7 @@ export function DataTable<TData, TValue>({
               Loading Item Summary
             </p>
             <p className="text-sm text-muted-foreground">
-              Fetching aggregated data for all transactions...
+              Fetching Aggregated Data For All Transactions...
             </p>
           </div>
         ) : hasData ? (
@@ -792,17 +763,7 @@ export function DataTable<TData, TValue>({
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={
-                filterType === 'all'
-                  ? 'CashSalesCode or Stock Code or Description...'
-                  : filterType === 'cashsalescode'
-                  ? 'Search CashSales Code...'
-                  : filterType === 'stockcode'
-                  ? 'Search Stock Code...'
-                  : filterType === 'description'
-                  ? 'Search Description...'
-                  : 'Search CashSales Code or Stock Code or Description...'
-              }
+              placeholder="Search CashSales Code, Stock Code, or Description..."
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
               className="h-10 w-full pl-9 pr-9 placeholder:text-sm"
@@ -1031,7 +992,7 @@ export function DataTable<TData, TValue>({
               <div className="mb-4 text-lg text-red-500">{detailError}</div>
               <div className="flex flex-col items-center justify-center gap-4 text-white">
                 <Unplug className="h-24 w-24" strokeWidth={1} />
-                <span>Cant Retrieve Data From The Server!</span>
+                <span>Can&apos;t Retrieve Data From The Server!</span>
               </div>
             </div>
           )}

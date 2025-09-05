@@ -190,8 +190,6 @@ export async function fetchAndSaveCashSales(
       ? `${API_BASE_URL}?${queryParams.toString()}`
       : API_BASE_URL;
 
-    // console.log('Fetching data from:', url);
-
     // Fetch data from API
     const response = await fetch(url, {
       method: 'GET',
@@ -203,12 +201,9 @@ export async function fetchAndSaveCashSales(
 
     if (!response.ok) {
       const errorText = await response.text();
-      // console.error('API Error Response:', errorText);
       throw new Error(`HTTP Error! Status: ${response.status} - ${errorText}`);
     }
-
     const apiData: CashSaleAPI[] = await response.json();
-    // console.log(`Fetched ${apiData.length} Records From API`);
 
     if (!Array.isArray(apiData) || apiData.length === 0) {
       return {
@@ -226,11 +221,6 @@ export async function fetchAndSaveCashSales(
     // Process data in batches
     for (let i = 0; i < apiData.length; i += batchSize) {
       const batch = apiData.slice(i, i + batchSize);
-      // console.log(
-      //   `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-      //     apiData.length / batchSize
-      //   )}`
-      // );
 
       for (const item of batch) {
         try {
@@ -281,7 +271,6 @@ export async function fetchAndSaveCashSales(
           const errorMessage = `Error Processing Record ${item.cashsalesid}: ${
             error instanceof Error ? error.message : 'Unknown Error'
           }`;
-          // console.error(errorMessage);
           errors.push(errorMessage);
         }
       }
@@ -301,8 +290,6 @@ export async function fetchAndSaveCashSales(
       errors: errors.length > 0 ? errors : undefined
     };
   } catch (error) {
-    // console.error('Error in fetchAndSaveCashSales:', error);
-
     return {
       success: false,
       message:
@@ -319,8 +306,6 @@ export async function fetchAndSaveCashSaleById(
   upsert: boolean = false
 ): Promise<FetchAndSaveResponse> {
   try {
-    // console.log(`Fetching and saving cash sale with ID: ${id}`);
-
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'GET',
       headers: {
@@ -331,7 +316,6 @@ export async function fetchAndSaveCashSaleById(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
@@ -446,7 +430,7 @@ export async function fetchCashSalesByDate(
   const { fromAPI = true, fromDB = true, upsert = false } = options;
 
   try {
-    console.log(`Fetching cash sales data for date: ${date}`);
+    console.log(`Fetching Cash Sales Data For Date: ${date}`);
 
     let apiData: CashSaleAPI[] = [];
     let dbData: CashSaleDB[] = [];
@@ -462,7 +446,7 @@ export async function fetchCashSalesByDate(
         queryParams.append('dateTo', date);
 
         const url = `${API_BASE_URL}?${queryParams.toString()}`;
-        console.log('Fetching from API:', url);
+        // console.log('Fetching from API:', url);
 
         const response = await fetch(url, {
           method: 'GET',
