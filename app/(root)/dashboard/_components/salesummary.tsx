@@ -231,9 +231,6 @@ export function SalesSummary({
           {/* Net Sales Card */}
           <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
             <CardContent className="relative p-4">
-              <div className="absolute right-2 top-2">
-                <Info className="h-4 w-4 text-gray-400" />
-              </div>
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Total Net Sales</h3>
                 <p className="text-2xl font-bold">
@@ -255,9 +252,6 @@ export function SalesSummary({
           {/* Discounts Card */}
           <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
             <CardContent className="relative p-4">
-              <div className="absolute right-2 top-2">
-                <Info className="h-4 w-4 text-gray-400" />
-              </div>
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Total Discounts</h3>
                 <p className="text-2xl font-bold">

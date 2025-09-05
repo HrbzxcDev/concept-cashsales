@@ -541,3 +541,70 @@ export async function getStockCodeTotals(stockCode: string) {
     return null;
   }
 }
+
+export async function getStockCodeDailyTransactions(stockCode: string) {
+  try {
+    const result = await db
+      .select({
+        date: cashsalesdetailsTable.cashsalesdate,
+        dailyQuantity: sum(cashsalesdetailsTable.quantity),
+        dailyTransactionCount: count()
+      })
+      .from(cashsalesdetailsTable)
+      .where(eq(cashsalesdetailsTable.stockcode, stockCode))
+      .groupBy(cashsalesdetailsTable.cashsalesdate)
+      .orderBy(asc(cashsalesdetailsTable.cashsalesdate));
+
+    return result.map((item) => ({
+      date: item.date,
+      dailyQuantity: Number(item.dailyQuantity || 0),
+      dailyTransactionCount: Number(item.dailyTransactionCount || 0)
+    }));
+  } catch (error) {
+    console.error('❌ Error getting stock code daily transactions:', error);
+    return [];
+  }
+}
+
+export async function getStockCodeMonthlyTransactions(stockCode: string, month?: string) {
+  try {
+    let whereConditions = eq(cashsalesdetailsTable.stockcode, stockCode);
+
+    // If month is specified, filter by that month
+    if (month) {
+      const currentYear = new Date().getFullYear();
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      
+      const monthIndex = monthNames.indexOf(month);
+      if (monthIndex !== -1) {
+        const startDate = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-01`;
+        const endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+        
+        whereConditions = sql`${cashsalesdetailsTable.stockcode} = ${stockCode} AND ${cashsalesdetailsTable.cashsalesdate} >= ${startDate} AND ${cashsalesdetailsTable.cashsalesdate} <= ${endDate}`;
+      }
+    }
+
+    const result = await db
+      .select({
+        date: cashsalesdetailsTable.cashsalesdate,
+        dailyQuantity: sum(cashsalesdetailsTable.quantity),
+        dailyTransactionCount: count()
+      })
+      .from(cashsalesdetailsTable)
+      .where(whereConditions)
+      .groupBy(cashsalesdetailsTable.cashsalesdate)
+      .orderBy(asc(cashsalesdetailsTable.cashsalesdate));
+
+    return result.map((item) => ({
+      date: item.date,
+      dailyQuantity: Number(item.dailyQuantity || 0),
+      dailyTransactionCount: Number(item.dailyTransactionCount || 0)
+    }));
+  } catch (error) {
+    console.error('❌ Error getting stock code monthly transactions:', error);
+    return [];
+  }
+}

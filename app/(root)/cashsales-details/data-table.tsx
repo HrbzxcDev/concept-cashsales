@@ -17,6 +17,12 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent
+} from '@/components/ui/chart';
 import {
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon
@@ -66,7 +72,11 @@ import type {
   CashSaleDetailLine
 } from '@/actions/cashsales-client';
 import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
-import { getStockCodeTotals } from '@/actions/getdata';
+import {
+  getStockCodeTotals,
+  getStockCodeDailyTransactions,
+  getStockCodeMonthlyTransactions
+} from '@/actions/getdata';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -93,6 +103,15 @@ export function DataTable<TData, TValue>({
   const [stockCodeTotals, setStockCodeTotals] = React.useState<any>(null);
   const [stockCodeTotalsLoading, setStockCodeTotalsLoading] =
     React.useState(false);
+  const [dailyTransactionData, setDailyTransactionData] = React.useState<any[]>(
+    []
+  );
+  const [dailyTransactionLoading, setDailyTransactionLoading] =
+    React.useState(false);
+  const [monthlyFilter, setMonthlyFilter] = React.useState<string>(() => {
+    const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+    return currentMonth;
+  });
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
@@ -167,13 +186,41 @@ export function DataTable<TData, TValue>({
     if (!stockCode) return;
     try {
       setStockCodeTotalsLoading(true);
-      const totals = await getStockCodeTotals(stockCode);
+      setDailyTransactionLoading(true);
+
+      // Fetch both totals and monthly transaction data in parallel
+      const [totals, monthlyData] = await Promise.all([
+        getStockCodeTotals(stockCode),
+        getStockCodeMonthlyTransactions(stockCode, monthlyFilter)
+      ]);
+
       setStockCodeTotals(totals);
+      setDailyTransactionData(monthlyData);
     } catch (err) {
-      console.error('Error fetching stock code totals:', err);
+      console.error('Error fetching stock code data:', err);
       setStockCodeTotals(null);
+      setDailyTransactionData([]);
     } finally {
       setStockCodeTotalsLoading(false);
+      setDailyTransactionLoading(false);
+    }
+  };
+
+  // Fetch monthly filtered data when filter changes
+  const fetchMonthlyData = async (stockCode: string, month: string) => {
+    if (!stockCode) return;
+    try {
+      setDailyTransactionLoading(true);
+      const monthlyData = await getStockCodeMonthlyTransactions(
+        stockCode,
+        month
+      );
+      setDailyTransactionData(monthlyData);
+    } catch (err) {
+      console.error('Error fetching monthly data:', err);
+      setDailyTransactionData([]);
+    } finally {
+      setDailyTransactionLoading(false);
     }
   };
 
@@ -302,63 +349,90 @@ export function DataTable<TData, TValue>({
               <h2 className="text-xl font-semibold text-white">
                 <p>Item Summary</p>
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 {hasData ? (
                   <>
-                    Summary for{' '}
-                    <span className="font-medium text-lg text-white">
-                      {rowData?.description || rowData?.cashsalescode || 'Selected Item'}
+                    <span>
+                      Summary for{' '}
+                      <span className="text-lg font-medium text-white">
+                        {rowData?.description ||
+                          rowData?.cashsalescode ||
+                          'Selected Item'}
+                      </span>
+                    </span>
+                    <span>|</span>
+                    <span>
+                      Stock Code:{' '}
+                      <span className="text-lg font-medium dark:text-white">
+                        {rowData?.stockcode || '-'}
+                      </span>
+                    </span>
+                    <span>|</span>
+                    <span>
+                      Date:{' '}
+                      <span className="text-lg font-medium dark:text-white">
+                        {rowData?.cashsalesdate
+                          ? new Date(rowData.cashsalesdate).toLocaleDateString(
+                              'en-PH',
+                              {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              }
+                            )
+                          : '-'}
+                      </span>
                     </span>
                   </>
                 ) : (
                   'Click on any row to view item summary'
                 )}
-              </p>
+              </div>
             </div>
           </div>
+
+          {/* Monthly Filter */}
+          {hasData && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Filter:</span>
+              <Select
+                value={monthlyFilter}
+                onValueChange={(value) => {
+                  setMonthlyFilter(value);
+                  if (rowData?.stockcode) {
+                    fetchMonthlyData(rowData.stockcode, value);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 w-32 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="January">January</SelectItem>
+                  <SelectItem value="February">February</SelectItem>
+                  <SelectItem value="March">March</SelectItem>
+                  <SelectItem value="April">April</SelectItem>
+                  <SelectItem value="May">May</SelectItem>
+                  <SelectItem value="June">June</SelectItem>
+                  <SelectItem value="July">July</SelectItem>
+                  <SelectItem value="August">August</SelectItem>
+                  <SelectItem value="September">September</SelectItem>
+                  <SelectItem value="October">October</SelectItem>
+                  <SelectItem value="November">November</SelectItem>
+                  <SelectItem value="December">December</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
-        {hasData && (
-          <div className="mb-6 flex gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              Stock Code:{' '}
-              <span className="font-medium dark:text-white">
-                {rowData?.stockcode || '-'}
-              </span>
-            </div>
-            {!hasStockCodeTotals && (
-              <div className="flex items-center gap-2">
-                Cash Sales Code:{' '}
-                <span className="font-medium dark:text-white">
-                  {rowData?.cashsalescode || '-'}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              Date:{' '}
-              <span className="font-medium dark:text-white">
-                {rowData?.cashsalesdate
-                  ? new Date(rowData.cashsalesdate).toLocaleDateString(
-                      'en-PH',
-                      {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }
-                    )
-                  : '-'}
-              </span>
-            </div>
-          </div>
-        )}
-
         {stockCodeTotalsLoading ? (
-          <div className="py-12 text-center text-slate-400">
+          <div className="h-[284px] py-12 text-center text-slate-400">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 p-4">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600"></div>
             </div>
             <p className="mb-2 text-xl font-medium text-white">
-              Loading Stock Code Totals
+              Loading Item Summary
             </p>
             <p className="text-sm">
               Fetching aggregated data for all transactions...
@@ -369,21 +443,21 @@ export function DataTable<TData, TValue>({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="col-span-1 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {/* Net Sales */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Net Sales</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
-                      ₱
+                    <div className="text-2xl font-bold">
+                      ₱{' '}
                       {formatMoney(
                         hasStockCodeTotals
                           ? stockCodeTotals?.totalAmount
                           : rowData?.amount || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total from all transactions'
                         : 'From selected transaction'}
@@ -392,20 +466,21 @@ export function DataTable<TData, TValue>({
                 </Card>
 
                 {/* Net Amount */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Net Amount</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-2xl font-bold">
+                      ₱{' '}
                       {formatMoney(
                         hasStockCodeTotals
                           ? stockCodeTotals?.totalNetAmount
                           : rowData?.netamount || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total net amount from all transactions'
                         : 'Total net amount'}
@@ -414,20 +489,20 @@ export function DataTable<TData, TValue>({
                 </Card>
 
                 {/* Orders */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Orders</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-2xl font-bold">
                       {formatNumber(
                         hasStockCodeTotals
                           ? stockCodeTotals?.totalQuantity
                           : rowData?.quantity || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total quantity from all transactions'
                         : 'Total quantity'}
@@ -436,21 +511,21 @@ export function DataTable<TData, TValue>({
                 </Card>
 
                 {/* Discount */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Discount</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
-                      ₱
+                    <div className="text-2xl font-bold">
+                      ₱{' '}
                       {formatMoney(
                         hasStockCodeTotals
                           ? stockCodeTotals?.totalDiscount
                           : rowData?.discount || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total discount from all transactions'
                         : 'Applied discount'}
@@ -459,21 +534,21 @@ export function DataTable<TData, TValue>({
                 </Card>
 
                 {/* Tax Amount */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Tax Amount</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
-                      ₱
+                    <div className="text-2xl font-bold">
+                      ₱{' '}
                       {formatMoney(
                         hasStockCodeTotals
                           ? stockCodeTotals?.totalTaxAmount
                           : rowData?.taxamount || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total tax from all transactions'
                         : 'Computed tax'}
@@ -482,20 +557,20 @@ export function DataTable<TData, TValue>({
                 </Card>
 
                 {/* Total Transactions */}
-                <Card className="border-slate-700 bg-card">
+                <Card className="border-gray-300 shadow-[5px_5px_5px_rgba(0,0,0,0.1)] dark:border-zinc-800">
                   <CardContent className="p-4">
-                    <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <div className="mb-1 flex items-center justify-between text-base text-muted-foreground">
                       <span>Total Transactions</span>
                       <Info className="h-3 w-3 opacity-70" />
                     </div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-2xl font-bold">
                       {formatNumber(
                         hasStockCodeTotals
                           ? stockCodeTotals?.transactionCount
                           : rowData?.transactioncount || 0
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {hasStockCodeTotals
                         ? 'Total transactions from all transactions'
                         : 'Total transactions'}
@@ -505,9 +580,93 @@ export function DataTable<TData, TValue>({
               </div>
               {/* Graph area */}
               <div className="col-span-1 md:col-span-1">
-                <div className="h-40 rounded-lg border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-900">
-                  <div className="h-full w-full rounded-lg bg-[radial-gradient(circle_at_70%_20%,rgba(59,130,246,0.25),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(16,185,129,0.2),transparent_40%)]"></div>
-                </div>
+                {(() => {
+                  if (dailyTransactionLoading) {
+                    return (
+                      <div className="flex h-[270px] items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-900"></div>
+                          <p className="text-sm">Loading Chart Data...</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (
+                    !dailyTransactionData ||
+                    dailyTransactionData.length === 0
+                  ) {
+                    return (
+                      <div className="flex h-[270px] items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                          <p className="text-sm">
+                            No Transaction Data Available
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Create chart data from daily transaction data
+                  const chartData = dailyTransactionData.map((item) => ({
+                    date: new Date(item.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
+                    }),
+                    transactions: item.dailyTransactionCount,
+                    quantity: item.dailyQuantity
+                  }));
+
+                  const chartConfig = {
+                    quantity: {
+                      label: 'Quantity',
+                      color: 'hsl(var(--chart-2))'
+                    },
+                    transactions: {
+                      label: 'Transactions',
+                      color: 'hsl(var(--chart-1))'
+                    }
+                  };
+
+                  return (
+                    <div className="h-[270px] p-2 ">
+                      <ChartContainer
+                        config={chartConfig}
+                        className="h-full w-full"
+                      >
+                        <BarChart accessibilityLayer data={chartData}>
+                          <CartesianGrid vertical={false} />
+                          <XAxis
+                            dataKey="date"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            interval="preserveStartEnd"
+                            tick={{ fontSize: 10 }}
+                          />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dashed" />}
+                          />
+                          <Bar
+                            dataKey="transactions"
+                            stackId="a"
+                            fill="hsl(var(--chart-1))"
+                            radius={[0, 0, 4, 4]}
+                            barSize={20}
+                          />
+                          <Bar
+                            dataKey="quantity"
+                            stackId="a"
+                            fill="hsl(var(--chart-2))"
+                            radius={[4, 4, 0, 0]}
+                            barSize={20}
+                          />
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
