@@ -85,24 +85,3 @@ export const notificationsTable = pgTable('tblnotifications', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
-
-// {
-//   "id": "f1e67180-e6bd-4161-ad23-638e77bc04bd",
-//   "numbering": "1",
-//   "stock": "CB-BLEND1",
-//   "description": "CB BLEND 1 1KG",
-//   "qty": 10,
-//   "uom": "UNIT(S)",
-//   "unitPrice": 780,
-//   "discount": "0.00",
-//   "amount": 7800,
-//   "taxCode": "SR-SP",
-//   "taxAmount": 835.71,
-//   "netAmount": 7800,
-//   "glAccount": "4110000000",
-//   "stockLocation": null,
-//   "costCentre": null,
-//   "project": "MALAKAS",
-//   "serialNumber": null,
-//   "cashSales": "00000394"
-// }

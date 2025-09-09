@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -25,12 +24,17 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
+      // First, trigger a check for new transaction date notifications
+      try {
+        await fetch('/api/notifications?action=check-new-transactions');
+      } catch {}
       const response = await fetch('/api/notifications');
       const data = await response.json();
 
@@ -72,31 +76,9 @@ export function NotificationBell({ className }: NotificationBellProps) {
 
       if (data.success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-        toast.success('All notifications marked as read');
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-    }
-  };
-
-  const showNotificationToast = (notification: Notification) => {
-    if (notification.type === 'skipped_cashsalescode') {
-      toast.warning(notification.title, {
-        description: notification.message,
-        duration: 10000, // Show for 10 seconds
-        action: {
-          label: 'View Details',
-          onClick: () => {
-            // You can add more detailed view here
-            console.log('Notification data:', notification.data);
-          }
-        }
-      });
-    } else {
-      toast.info(notification.title, {
-        description: notification.message,
-        duration: 5000
-      });
     }
   };
 
@@ -111,27 +93,46 @@ export function NotificationBell({ className }: NotificationBellProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Show toast for new unread notifications
+  // Close when clicking outside or pressing Escape
   useEffect(() => {
-    const newNotifications = notifications.filter((n) => !n.isRead);
-    newNotifications.forEach((notification) => {
-      showNotificationToast(notification);
-    });
-  }, [notifications]);
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} ref={containerRef}>
       <Button
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative"
+        className="relative border"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
-            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-xs"
+            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-xs rounded-full"
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </Badge>
@@ -139,16 +140,16 @@ export function NotificationBell({ className }: NotificationBellProps) {
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-12 z-50 max-h-96 w-80 overflow-y-auto rounded-lg border bg-background shadow-lg">
-          <div className="flex items-center justify-between border-b p-4">
+        <div className="fixed sm:absolute top-16 sm:top-10 z-50 max-h-80 w-80 max-w-[90vw] overflow-y-auto rounded-lg border bg-background shadow-lg left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0">
+          <div className="flex items-center justify-between border-b p-3">
             <h3 className="font-semibold">Notifications</h3>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="text-xs"
+                  className="text-xs h-6"
                 >
                   Mark all read
                 </Button>
@@ -167,11 +168,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
           <div className="p-2">
             {isLoading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading notifications...
+                Loading Notifications...
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                No notifications
+                No Notifications
               </div>
             ) : (
               <div className="space-y-2">
@@ -181,7 +182,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       notification.isRead
                         ? 'bg-muted/50 hover:bg-muted'
-                        : 'border-l-4 border-l-orange-500 bg-background hover:bg-muted'
+                        : 'border-l-2 border-l-[#10b981] bg-background hover:bg-muted'
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
@@ -193,8 +194,16 @@ export function NotificationBell({ className }: NotificationBellProps) {
                         <p className="mt-1 text-xs text-muted-foreground">
                           {notification.message}
                         </p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {new Date(notification.createdAt).toLocaleString()}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {new Date(notification.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })} at {new Date(notification.createdAt).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
                         </p>
                       </div>
                       {!notification.isRead && (

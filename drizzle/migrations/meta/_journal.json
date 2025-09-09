@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1755879015642,
-      "tag": "0000_normal_logan",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1755934391626,
-      "tag": "0001_lively_kree",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1755934391627,
-      "tag": "0001_fetch_completion_table",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1757354204842,
-      "tag": "0003_blushing_iron_lad",
+      "when": 1757394916368,
+      "tag": "0000_left_lorna_dane",
       "breakpoints": true
     }
   ]

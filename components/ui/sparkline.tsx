@@ -14,6 +14,8 @@ export type SparklineProps = {
   strokeWidth?: number;
   className?: string;
   height?: number;
+  animate?: boolean;
+  animationDuration?: number;
 };
 
 export function Sparkline({
@@ -21,7 +23,9 @@ export function Sparkline({
   color = 'hsl(var(--chart-1))',
   strokeWidth = 2,
   className,
-  height = 48
+  height = 48,
+  animate = true,
+  animationDuration = 5000
 }: SparklineProps) {
   return (
     <div className={className} style={{ height }}>
@@ -36,7 +40,10 @@ export function Sparkline({
             stroke={color}
             strokeWidth={strokeWidth}
             dot={false}
-            isAnimationActive={false}
+            isAnimationActive={animate}
+            animationBegin={0}
+            animationDuration={animationDuration}
+            animationEasing="ease-out"
           />
         </LineChart>
       </ResponsiveContainer>

@@ -63,6 +63,7 @@ export default function Overview({
   percentageChangeDataItemsQuantity,
   top5ItemsByQuantity
 }: OverviewProps) {
+
   //Total Transactions Card
   const getPercentageChangeTransactions = () => percentageChangeData.percentage;
   const getPercentageChangeActivity = () => 0.0; // Keep this as mock for now
