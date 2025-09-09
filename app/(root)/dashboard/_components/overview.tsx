@@ -63,21 +63,17 @@ export default function Overview({
   percentageChangeDataItemsQuantity,
   top5ItemsByQuantity
 }: OverviewProps) {
-
+  //Total Transactions Card
   const getPercentageChangeTransactions = () => percentageChangeData.percentage;
   const getPercentageChangeActivity = () => 0.0; // Keep this as mock for now
 
   // Build compact sparkline data (daily counts for the last `days` days)
   function getDailyCountsData(rows: any[], days = 30) {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const toKey = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
     const counts = new Map<string, number>();
     for (const row of rows || []) {
       if (!row?.cashsalesdate) continue;
-      const d = new Date(row.cashsalesdate);
-      const key = toKey(d);
+      // Database dates are already stored in YYYY-MM-DD format
+      const key = row.cashsalesdate;
       counts.set(key, (counts.get(key) || 0) + 1);
     }
 
@@ -87,7 +83,10 @@ export default function Overview({
     for (let i = days - 1; i >= 0; i -= 1) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const key = toKey(d);
+      // Use Philippine timezone to match database storage
+      const key = d.toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Manila'
+      });
       result.push({ date: key, value: counts.get(key) || 0 });
     }
     return result;
@@ -95,11 +94,6 @@ export default function Overview({
 
   // Build daily total items sold (quantity) data for sparkline
   function getDailyItemsSoldData(rows: any[], days = 30) {
-
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const toKey = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
     const quantities = new Map<string, number>();
     const uniqueDates = new Set<string>();
 
@@ -108,13 +102,12 @@ export default function Overview({
         // console.log('⚠️ Skipping row without cashsalesdate:', row);
         continue;
       }
-      const d = new Date(row.cashsalesdate);
-      const key = toKey(d);
+      // Database dates are already stored in YYYY-MM-DD format
+      const key = row.cashsalesdate;
       uniqueDates.add(key);
       const currentQuantity = quantities.get(key) || 0;
       const rowQuantity = Number(row.quantity) || 0;
       quantities.set(key, currentQuantity + rowQuantity);
-
     }
 
     const result: { date: string; value: number }[] = [];
@@ -122,7 +115,6 @@ export default function Overview({
 
     // If we have very few unique dates, create a more realistic distribution
     if (uniqueDates.size < 5) {
-
       // Get the total quantity and distribute it across the last 30 days
       const totalQuantity = Array.from(quantities.values()).reduce(
         (sum, qty) => sum + qty,
@@ -134,7 +126,10 @@ export default function Overview({
       for (let i = days - 1; i >= 0; i -= 1) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
-        const key = toKey(d);
+        // Use Philippine timezone to match database storage
+        const key = d.toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Manila'
+        });
 
         // Add some realistic variation (±30% from average)
         const variation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
@@ -147,7 +142,10 @@ export default function Overview({
       for (let i = days - 1; i >= 0; i -= 1) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
-        const key = toKey(d);
+        // Use Philippine timezone to match database storage
+        const key = d.toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Manila'
+        });
         const value = quantities.get(key) || 0;
         result.push({ date: key, value });
       }
@@ -164,15 +162,18 @@ export default function Overview({
 
   // Function to get today's total transactions
   function getTodayTransactions() {
+    // Get today's date in Philippine timezone to match database storage
     const today = new Date();
-    const todayKey = today.toISOString().split('T')[0]; // Get YYYY-MM-DD format
-    
+    const todayKey = today.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila'
+    }); // Get YYYY-MM-DD format in Philippine timezone
+
     let todayCount = 0;
     for (const row of cashsalesData || []) {
       if (!row?.cashsalesdate) continue;
-      const rowDate = new Date(row.cashsalesdate);
-      const rowKey = rowDate.toISOString().split('T')[0];
-      
+      // Database dates are already stored in YYYY-MM-DD format, so we can compare directly
+      const rowKey = row.cashsalesdate;
+
       if (rowKey === todayKey) {
         todayCount++;
       }
@@ -188,7 +189,11 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Transactions
             </CardTitle>
-            <ShoppingCart className='dark:text-muted-foreground' size={28} strokeWidth={1.5}  />
+            <ShoppingCart
+              className="dark:text-muted-foreground"
+              size={28}
+              strokeWidth={1.5}
+            />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalTransactions}</div>
@@ -225,7 +230,11 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Yesterday&apos;s Transactions
             </CardTitle>
-            <PackageCheck className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
+            <PackageCheck
+              className="dark:text-muted-foreground"
+              size={28}
+              strokeWidth={1.5}
+            />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -235,12 +244,14 @@ export default function Overview({
               <Badge
                 variant="outline"
                 className={
-                  getTodayTransactions() >= percentageChangeData.yesterdayTransactions
+                  getTodayTransactions() >=
+                  percentageChangeData.yesterdayTransactions
                     ? 'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/10'
                     : 'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/10'
                 }
               >
-                {getTodayTransactions() >= percentageChangeData.yesterdayTransactions ? (
+                {getTodayTransactions() >=
+                percentageChangeData.yesterdayTransactions ? (
                   <TrendingUp className="mr-1 h-4 w-4" />
                 ) : (
                   <TrendingDown className="mr-1 h-4 w-4" />
@@ -263,7 +274,11 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Total Items Sold
             </CardTitle>
-            <ShoppingBasket className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
+            <ShoppingBasket
+              className="dark:text-muted-foreground"
+              size={28}
+              strokeWidth={1.5}
+            />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalItemsQuantity}</div>
@@ -300,7 +315,11 @@ export default function Overview({
             <CardTitle className="text-md font-thin text-muted-foreground">
               Deployed Branches
             </CardTitle>
-            <MapPinHouse className='dark:text-muted-foreground' size={28} strokeWidth={1.5} />
+            <MapPinHouse
+              className="dark:text-muted-foreground"
+              size={28}
+              strokeWidth={1.5}
+            />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalBranch}</div>
@@ -343,11 +362,10 @@ export default function Overview({
               weeklyData={weeklySalesAndDiscountData}
               dailyData={dailySalesAndDiscountData}
             />
-           
           </div>
           <div className="lg:col-span-1">
             <div className="flex flex-col gap-4">
-            <TopSoldItems top5ItemsByQuantity={top5ItemsByQuantity} />
+              <TopSoldItems top5ItemsByQuantity={top5ItemsByQuantity} />
             </div>
           </div>
         </div>

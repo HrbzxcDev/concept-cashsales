@@ -39,6 +39,7 @@ import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
 import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
 import ThemeToggle from './ThemeToggle/theme-toggle';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 export const company = {
   name: 'Concept CashSales',
@@ -191,6 +192,7 @@ export default function AppSidebar({
             </div>
           ) : null}
           <div className="flex items-center gap-2 px-4">
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

@@ -74,6 +74,18 @@ export const fetchCompletionTable = pgTable('tblfetchcompletion', {
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
 
+export const notificationsTable = pgTable('tblnotifications', {
+  id: uuid('id').notNull().primaryKey().defaultRandom().unique(),
+  type: varchar('type', { length: 50 }).notNull(), // 'skipped_cashsalescode'
+  title: varchar('title', { length: 200 }).notNull(),
+  message: varchar('message', { length: 500 }).notNull(),
+  data: varchar('data', { length: 1000 }), // JSON string for additional data
+  isRead: boolean('isread').notNull().default(false),
+  isActive: boolean('isactive').notNull().default(true),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow()
+});
+
 // {
 //   "id": "f1e67180-e6bd-4161-ad23-638e77bc04bd",
 //   "numbering": "1",

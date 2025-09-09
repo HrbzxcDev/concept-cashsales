@@ -109,10 +109,13 @@ export function DataTable<TData, TValue>({
   const [previousMonthData, setPreviousMonthData] = React.useState<any>(null);
 
   // Function to calculate percentage change
-  const calculatePercentageChange = (current: number, previous: number): number => {
+  const calculatePercentageChange = (
+    current: number,
+    previous: number
+  ): number => {
     // Debug logging
-    console.log('Percentage calculation:', { current, previous });
-    
+    // console.log('Percentage calculation:', { current, previous });
+
     // If previous is null or undefined, don't show percentage
     if (previous == null) return NaN;
     // If both are 0, no change (0%)
@@ -123,15 +126,25 @@ export function DataTable<TData, TValue>({
     if (current === 0 && previous > 0) return -100;
     // Normal percentage calculation
     const result = ((current - previous) / previous) * 100;
-    console.log('Percentage result:', result);
+    // console.log('Percentage result:', result);
     return result;
   };
 
   // Function to get previous month name
   const getPreviousMonth = (currentMonth: string): string => {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     const currentIndex = monthNames.indexOf(currentMonth);
     const previousIndex = currentIndex === 0 ? 11 : currentIndex - 1;
@@ -227,7 +240,7 @@ export function DataTable<TData, TValue>({
     if (!stockCode) return;
     try {
       setDailyTransactionLoading(true);
-      
+
       // Fetch current month totals, monthly transaction data, and previous month data in parallel
       const previousMonth = getPreviousMonth(month);
       const [currentTotals, monthlyData, previousData] = await Promise.all([
@@ -235,7 +248,7 @@ export function DataTable<TData, TValue>({
         getStockCodeMonthlyTransactions(stockCode, month),
         getStockCodeTotals(stockCode, previousMonth)
       ]);
-      
+
       setStockCodeTotals(currentTotals);
       setDailyTransactionData(monthlyData);
       setPreviousMonthData(previousData);
@@ -337,51 +350,50 @@ export function DataTable<TData, TValue>({
   }
 
   // Percentage Badge Component
-function PercentageBadge({
-  percentage,
-  className = ''
-}: {
-  percentage: number;
-  className?: string;
-}) {
-  // Don't show if percentage is NaN or Infinity
-  if (!isFinite(percentage)) return null;
-  
-  const isPositive = percentage > 0;
-  const isNegative = percentage < 0;
-  const isZero = percentage === 0;
-  
-  // Choose icon based on percentage
-  let icon;
-  if (isZero) {
-    // For 0%, use a neutral icon or no icon
-    icon = null;
-  } else if (isPositive) {
-    icon = <TrendingUp className="mr-1 h-4 w-4" />;
-  } else {
-    icon = <TrendingDown className="mr-1 h-4 w-4" />;
-  }
+  function PercentageBadge({
+    percentage,
+    className = ''
+  }: {
+    percentage: number;
+    className?: string;
+  }) {
+    // Don't show if percentage is NaN or Infinity
+    if (!isFinite(percentage)) return null;
 
-  // Choose color based on percentage
-  let colorClass;
-  if (isZero) {
-    colorClass = 'border-[#6b7280]/0 bg-[#6b7280]/10 text-[#6b7280] hover:bg-[#6b7280]/10';
-  } else if (isPositive) {
-    colorClass = 'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/10';
-  } else {
-    colorClass = 'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/10';
-  }
+    const isPositive = percentage > 0;
+    const isZero = percentage === 0;
 
-  return (
-    <Badge
-      variant="outline"
-      className={`${colorClass} ${className}`}
-    >
-      {icon}
-      {Math.abs(percentage).toFixed(1)}%
-    </Badge>
-  );
-}
+    // Choose icon based on percentage
+    let icon;
+    if (isZero) {
+      // For 0%, use a neutral icon or no icon
+      icon = null;
+    } else if (isPositive) {
+      icon = <TrendingUp className="mr-1 h-4 w-4" />;
+    } else {
+      icon = <TrendingDown className="mr-1 h-4 w-4" />;
+    }
+
+    // Choose color based on percentage
+    let colorClass;
+    if (isZero) {
+      colorClass =
+        'border-[#6b7280]/0 bg-[#6b7280]/10 text-[#6b7280] hover:bg-[#6b7280]/10';
+    } else if (isPositive) {
+      colorClass =
+        'border-[#10b981]/0 bg-[#10b981]/10 text-[#10b981] hover:bg-[#10b981]/10';
+    } else {
+      colorClass =
+        'border-[#ef4444]/0 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/10';
+    }
+
+    return (
+      <Badge variant="outline" className={`${colorClass} ${className}`}>
+        {icon}
+        {Math.abs(percentage).toFixed(1)}%
+      </Badge>
+    );
+  }
 
   function SummaryCard({ rowData }: { rowData: any }) {
     const formatMoney = (n: any) =>
@@ -430,22 +442,6 @@ function PercentageBadge({
                       Stock Code:{' '}
                       <span className="text-lg font-medium dark:text-white">
                         {rowData?.stockcode || '-'}
-                      </span>
-                    </span>
-                    <span>|</span>
-                    <span>
-                      Date:{' '}
-                      <span className="text-lg font-medium dark:text-white">
-                        {rowData?.cashsalesdate
-                          ? new Date(rowData.cashsalesdate).toLocaleDateString(
-                              'en-PH',
-                              {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              }
-                            )
-                          : '-'}
                       </span>
                     </span>
                   </>
@@ -528,7 +524,14 @@ function PercentageBadge({
                           ? 'Total from all transactions'
                           : 'From selected transaction'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.totalAmount || 0 : rowData?.amount || 0, previousMonthData?.totalAmount || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.totalAmount || 0
+                            : rowData?.amount || 0,
+                          previousMonthData?.totalAmount || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -554,7 +557,14 @@ function PercentageBadge({
                           ? 'Total net amount from all transactions'
                           : 'Total net amount'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.totalNetAmount || 0 : rowData?.netamount || 0, previousMonthData?.totalNetAmount || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.totalNetAmount || 0
+                            : rowData?.netamount || 0,
+                          previousMonthData?.totalNetAmount || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -579,7 +589,14 @@ function PercentageBadge({
                           ? 'Total quantity from all transactions'
                           : 'Total quantity'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.totalQuantity || 0 : rowData?.quantity || 0, previousMonthData?.totalQuantity || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.totalQuantity || 0
+                            : rowData?.quantity || 0,
+                          previousMonthData?.totalQuantity || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -605,7 +622,14 @@ function PercentageBadge({
                           ? 'Total discount from all transactions'
                           : 'Applied discount'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.totalDiscount || 0 : rowData?.discount || 0, previousMonthData?.totalDiscount || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.totalDiscount || 0
+                            : rowData?.discount || 0,
+                          previousMonthData?.totalDiscount || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -631,7 +655,14 @@ function PercentageBadge({
                           ? 'Total tax from all transactions'
                           : 'Computed tax'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.totalTaxAmount || 0 : rowData?.taxamount || 0, previousMonthData?.totalTaxAmount || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.totalTaxAmount || 0
+                            : rowData?.taxamount || 0,
+                          previousMonthData?.totalTaxAmount || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -656,7 +687,14 @@ function PercentageBadge({
                           ? 'Total transactions from all transactions'
                           : 'Total transactions'}
                       </div>
-                      <PercentageBadge percentage={calculatePercentageChange(hasStockCodeTotals ? stockCodeTotals?.transactionCount || 0 : rowData?.transactioncount || 0, previousMonthData?.transactionCount || 0)} />
+                      <PercentageBadge
+                        percentage={calculatePercentageChange(
+                          hasStockCodeTotals
+                            ? stockCodeTotals?.transactionCount || 0
+                            : rowData?.transactioncount || 0,
+                          previousMonthData?.transactionCount || 0
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>

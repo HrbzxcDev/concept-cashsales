@@ -88,7 +88,7 @@ export async function getTransactionCountPerLocation() {
     return [];
   }
 }
-
+//Total Transactions Card
 export async function getPercentageChangeTotalTransaction() {
   try {
     // Get yesterday's date in local timezone to avoid UTC issues
@@ -461,14 +461,28 @@ export async function getStockCodeTotals(stockCode: string, month?: string) {
     // If month is specified, filter by that month across all years
     if (month) {
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
       ];
-      
+
       const monthIndex = monthNames.indexOf(month);
       if (monthIndex !== -1) {
         // Use EXTRACT to get month from date, allowing data from all years
-        whereConditions = sql`${cashsalesdetailsTable.stockcode} = ${stockCode} AND EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate}) = ${monthIndex + 1}`;
+        whereConditions = sql`${
+          cashsalesdetailsTable.stockcode
+        } = ${stockCode} AND EXTRACT(MONTH FROM ${
+          cashsalesdetailsTable.cashsalesdate
+        }) = ${monthIndex + 1}`;
       }
     }
 
@@ -528,21 +542,38 @@ export async function getStockCodeDailyTransactions(stockCode: string) {
   }
 }
 
-export async function getStockCodeMonthlyTransactions(stockCode: string, month?: string) {
+export async function getStockCodeMonthlyTransactions(
+  stockCode: string,
+  month?: string
+) {
   try {
     let whereConditions = eq(cashsalesdetailsTable.stockcode, stockCode);
 
     // If month is specified, filter by that month across all years
     if (month) {
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
       ];
-      
+
       const monthIndex = monthNames.indexOf(month);
       if (monthIndex !== -1) {
         // Use EXTRACT to get month from date, allowing data from all years
-        whereConditions = sql`${cashsalesdetailsTable.stockcode} = ${stockCode} AND EXTRACT(MONTH FROM ${cashsalesdetailsTable.cashsalesdate}) = ${monthIndex + 1}`;
+        whereConditions = sql`${
+          cashsalesdetailsTable.stockcode
+        } = ${stockCode} AND EXTRACT(MONTH FROM ${
+          cashsalesdetailsTable.cashsalesdate
+        }) = ${monthIndex + 1}`;
       }
     }
 
