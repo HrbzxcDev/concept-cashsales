@@ -29,6 +29,7 @@ export type cashsalesdetails = {
 export const CashsalesdetailsColumns: ColumnDef<cashsalesdetails>[] = [
   {
     accessorKey: 'cashsalesdate',
+    size: 175,
     header: () => <div className="text-center">CashSales Date</div>,
     cell: ({ row }) => {
       const date = new Date(row.getValue('cashsalesdate'));

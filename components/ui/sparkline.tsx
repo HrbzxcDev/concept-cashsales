@@ -25,7 +25,7 @@ export function Sparkline({
   className,
   height = 48,
   animate = true,
-  animationDuration = 5000
+  animationDuration = 3000
 }: SparklineProps) {
   return (
     <div className={className} style={{ height }}>

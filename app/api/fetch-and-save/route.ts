@@ -737,9 +737,9 @@ export async function GET(request: NextRequest) {
           // );
         }
 
-        // For automatic fetches, don't force re-run unless explicitly requested
+        // For automatic fetches, force re-run if new cash sales codes were saved
         // For manual fetches, allow force re-run
-        const shouldForceDetails = customDescription ? forceDetails : false;
+        const shouldForceDetails = customDescription ? forceDetails : (savedCount > 0);
 
         detailsResult = await fetchAndSaveCashSalesDetails(fromDate, toDate, {
           upsert: upsert,
