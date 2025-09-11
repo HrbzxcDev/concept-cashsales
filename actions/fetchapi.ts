@@ -609,25 +609,27 @@ function transformDetailLineToDB(
     stockid: detailLine.id || '',
     cashsalescode: cashsalescode,
     cashsalesdate: cashsalesdate,
-    numbering: detailLine.numbering || '',
-    stockcode: detailLine.stock || '',
-    description: detailLine.description || '',
+    numbering: (detailLine.numbering ?? '').trim(),
+    stockcode: (detailLine.stock ?? '').trim(),
+    description: (detailLine.description ?? '').trim(),
     quantity: detailLine.qty || 0,
-    uom: detailLine.uom || '',
+    uom: (detailLine.uom ?? '').trim(),
     unitprice: detailLine.unitPrice || 0,
     discount:
       typeof detailLine.discount === 'string'
-        ? parseFloat(detailLine.discount.replace(/,/g, '')) || 0
-        : detailLine.discount || 0,
+      // ? parseFloat(detailLine.discount.replace(/,/g, '')) || 0
+      // : detailLine.discount || 0,
+        ? parseFloat(detailLine.discount.replace(/[^\d.-]/g, '')) || 0
+        : Number(detailLine.discount) || 0,
     amount: detailLine.amount || 0,
     taxcode: detailLine.taxCode || '',
     taxamount: detailLine.taxAmount || 0,
     netamount: detailLine.netAmount || 0,
-    glaccount: detailLine.glAccount || '',
-    stocklocation: detailLine.stockLocation || '',
-    costcentre: detailLine.costCentre || '',
-    project: detailLine.project || '',
-    serialnumber: detailLine.serialNumber || '',
+    glaccount: (detailLine.glAccount ?? '').trim(),
+    stocklocation: (detailLine.stockLocation ?? '').trim(),
+    costcentre: (detailLine.costCentre ?? '').trim(),
+    project: (detailLine.project ?? '').trim(),
+    serialnumber: (detailLine.serialNumber ?? '').trim(),
     status: true
   } as any; // Type assertion to handle numeric field types
 }

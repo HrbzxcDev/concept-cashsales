@@ -88,7 +88,7 @@ export async function getTransactionCountPerLocation() {
     return [];
   }
 }
-
+//Total Transactions Card
 export async function getPercentageChangeTotalTransaction() {
   try {
     // Get yesterday's date in local timezone to avoid UTC issues
@@ -454,8 +454,38 @@ export async function getCashSalesDetailsDataWithCount(): Promise<CashSalesDetai
   };
 }
 
-export async function getStockCodeTotals(stockCode: string) {
+export async function getStockCodeTotals(stockCode: string, month?: string) {
   try {
+    let whereConditions = eq(cashsalesdetailsTable.stockcode, stockCode);
+
+    // If month is specified, filter by that month across all years
+    if (month) {
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
+
+      const monthIndex = monthNames.indexOf(month);
+      if (monthIndex !== -1) {
+        // Use EXTRACT to get month from date, allowing data from all years
+        whereConditions = sql`${
+          cashsalesdetailsTable.stockcode
+        } = ${stockCode} AND EXTRACT(MONTH FROM ${
+          cashsalesdetailsTable.cashsalesdate
+        }) = ${monthIndex + 1}`;
+      }
+    }
+
     const result = await db
       .select({
         stockcode: cashsalesdetailsTable.stockcode,
@@ -467,7 +497,7 @@ export async function getStockCodeTotals(stockCode: string) {
         transactionCount: count()
       })
       .from(cashsalesdetailsTable)
-      .where(eq(cashsalesdetailsTable.stockcode, stockCode))
+      .where(whereConditions)
       .groupBy(cashsalesdetailsTable.stockcode);
 
     if (result.length === 0) {
@@ -512,24 +542,38 @@ export async function getStockCodeDailyTransactions(stockCode: string) {
   }
 }
 
-export async function getStockCodeMonthlyTransactions(stockCode: string, month?: string) {
+export async function getStockCodeMonthlyTransactions(
+  stockCode: string,
+  month?: string
+) {
   try {
     let whereConditions = eq(cashsalesdetailsTable.stockcode, stockCode);
 
-    // If month is specified, filter by that month
+    // If month is specified, filter by that month across all years
     if (month) {
-      const currentYear = new Date().getFullYear();
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
       ];
-      
+
       const monthIndex = monthNames.indexOf(month);
       if (monthIndex !== -1) {
-        const startDate = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-01`;
-        const endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
-        
-        whereConditions = sql`${cashsalesdetailsTable.stockcode} = ${stockCode} AND ${cashsalesdetailsTable.cashsalesdate} >= ${startDate} AND ${cashsalesdetailsTable.cashsalesdate} <= ${endDate}`;
+        // Use EXTRACT to get month from date, allowing data from all years
+        whereConditions = sql`${
+          cashsalesdetailsTable.stockcode
+        } = ${stockCode} AND EXTRACT(MONTH FROM ${
+          cashsalesdetailsTable.cashsalesdate
+        }) = ${monthIndex + 1}`;
       }
     }
 

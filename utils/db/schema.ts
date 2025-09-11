@@ -74,23 +74,14 @@ export const fetchCompletionTable = pgTable('tblfetchcompletion', {
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
 
-// {
-//   "id": "f1e67180-e6bd-4161-ad23-638e77bc04bd",
-//   "numbering": "1",
-//   "stock": "CB-BLEND1",
-//   "description": "CB BLEND 1 1KG",
-//   "qty": 10,
-//   "uom": "UNIT(S)",
-//   "unitPrice": 780,
-//   "discount": "0.00",
-//   "amount": 7800,
-//   "taxCode": "SR-SP",
-//   "taxAmount": 835.71,
-//   "netAmount": 7800,
-//   "glAccount": "4110000000",
-//   "stockLocation": null,
-//   "costCentre": null,
-//   "project": "MALAKAS",
-//   "serialNumber": null,
-//   "cashSales": "00000394"
-// }
+export const notificationsTable = pgTable('tblnotifications', {
+  id: uuid('id').notNull().primaryKey().defaultRandom().unique(),
+  type: varchar('type', { length: 50 }).notNull(), // 'skipped_cashsalescode'
+  title: varchar('title', { length: 200 }).notNull(),
+  message: varchar('message', { length: 500 }).notNull(),
+  data: varchar('data', { length: 1000 }), // JSON string for additional data
+  isRead: boolean('isread').notNull().default(false),
+  isActive: boolean('isactive').notNull().default(true),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow()
+});

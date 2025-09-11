@@ -1,4 +1,4 @@
-CREATE TABLE "tblapiactivity" (
+CREATE TABLE IF NOT EXISTS "tblapiactivity" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"description" varchar(150) NOT NULL,
 	"count" numeric NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE "tblapiactivity" (
 	CONSTRAINT "tblapiactivity_id_unique" UNIQUE("id")
 );
 --> statement-breakpoint
-CREATE TABLE "tblcashsales" (
+CREATE TABLE IF NOT EXISTS "tblcashsales" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"cashsalesid" varchar(150) NOT NULL,
 	"cashsalesdate" date NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE "tblcashsales" (
 	CONSTRAINT "tblcashsales_cashsalescode_unique" UNIQUE("cashsalescode")
 );
 --> statement-breakpoint
-CREATE TABLE "tblcashsalesdetails" (
+CREATE TABLE IF NOT EXISTS "tblcashsalesdetails" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"stockid" varchar(150) NOT NULL,
 	"cashsalescode" varchar(150) NOT NULL,
@@ -51,4 +51,36 @@ CREATE TABLE "tblcashsalesdetails" (
 	CONSTRAINT "tblcashsalesdetails_id_unique" UNIQUE("id")
 );
 --> statement-breakpoint
-ALTER TABLE "tblcashsalesdetails" ADD CONSTRAINT "tblcashsalesdetails_cashsalescode_tblcashsales_cashsalescode_fk" FOREIGN KEY ("cashsalescode") REFERENCES "public"."tblcashsales"("cashsalescode") ON DELETE no action ON UPDATE no action;
+CREATE TABLE IF NOT EXISTS "tblfetchcompletion" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"operationtype" varchar(50) NOT NULL,
+	"datefrom" date NOT NULL,
+	"dateto" date NOT NULL,
+	"completedat" timestamp DEFAULT now() NOT NULL,
+	"recordsprocessed" numeric NOT NULL,
+	"savedcount" numeric NOT NULL,
+	"updatedcount" numeric NOT NULL,
+	"status" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "tblfetchcompletion_id_unique" UNIQUE("id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "tblnotifications" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"type" varchar(50) NOT NULL,
+	"title" varchar(200) NOT NULL,
+	"message" varchar(500) NOT NULL,
+	"data" varchar(1000),
+	"isread" boolean DEFAULT false NOT NULL,
+	"isactive" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "tblnotifications_id_unique" UNIQUE("id")
+);
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "tblcashsalesdetails" ADD CONSTRAINT "tblcashsalesdetails_cashsalescode_tblcashsales_cashsalescode_fk" FOREIGN KEY ("cashsalescode") REFERENCES "public"."tblcashsales"("cashsalescode") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
