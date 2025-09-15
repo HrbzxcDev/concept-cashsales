@@ -52,7 +52,7 @@ import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DateRange } from 'react-day-picker';
-import { isWithinInterval, endOfDay, startOfDay } from 'date-fns';
+import { isWithinInterval, endOfDay, startOfDay, addDays } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -164,7 +164,7 @@ export function DataTable<TData, TValue>({
           const cashsalesdate = new Date((item as any).cashsalesdate);
           return isWithinInterval(cashsalesdate, {
             start: startOfDay(dateRange.from),
-            end: endOfDay(dateRange.to)
+            end: endOfDay(addDays(dateRange.to, 1))
           });
         }
         return true;
