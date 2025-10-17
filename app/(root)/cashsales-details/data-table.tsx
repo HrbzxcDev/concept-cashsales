@@ -151,45 +151,66 @@ export function DataTable<TData, TValue>({
     return monthNames[previousIndex];
   };
 
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
-    from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    to: new Date()
-  });
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined); // Start with no date filter
   const [searchValue, setSearchValue] = React.useState<string>('');
 
   const filteredData = React.useMemo(() => {
-    return data
-      .filter((item) => {
-        if (dateRange?.from && dateRange?.to) {
-          const cashsalesdate = new Date((item as any).cashsalesdate);
-          return isWithinInterval(cashsalesdate, {
-            start: startOfDay(dateRange.from),
-            end: endOfDay(addDays(dateRange.to, 1))
-          });
+    // Debug logging
+    console.log('Total data received:', data.length);
+    console.log('Date range:', dateRange);
+    console.log('Search value:', searchValue);
+    
+    if (data.length > 0) {
+      console.log('Sample data item:', data[0]);
+      console.log('Sample date:', (data[0] as any).cashsalesdate);
+    }
+
+    const dateFiltered = data.filter((item) => {
+      if (dateRange?.from && dateRange?.to) {
+        const cashsalesdate = new Date((item as any).cashsalesdate);
+        const isInRange = isWithinInterval(cashsalesdate, {
+          start: startOfDay(dateRange.from),
+          end: endOfDay(addDays(dateRange.to, 1))
+        });
+        if (!isInRange) {
+          console.log('Filtered out by date:', (item as any).cashsalesdate, 'not in range', dateRange.from, 'to', dateRange.to);
         }
-        return true;
-      })
-      .filter((item) => {
-        if (!searchValue) return true;
+        return isInRange;
+      }
+      return true;
+    });
 
-        const searchLower = searchValue.toLowerCase();
+    console.log('After date filtering:', dateFiltered.length);
 
-        // Search in all fields
-        return (
-          (item as any).cashsalescode.toLowerCase().includes(searchLower) ||
-          (item as any).stockcode.toLowerCase().includes(searchLower) ||
-          (item as any).description.toLowerCase().includes(searchLower)
-        );
-      })
-      .sort((a, b) => {
-        const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
-          'en-US'
-        );
-        const nameB = new Date((b as any).cashsalesdate).toLocaleDateString(
-          'en-US'
-        );
-        return nameA.localeCompare(nameB);
-      });
+    const searchFiltered = dateFiltered.filter((item) => {
+      if (!searchValue) return true;
+
+      const searchLower = searchValue.toLowerCase();
+
+      // Search in all fields
+      const matches = (
+        (item as any).cashsalescode?.toLowerCase().includes(searchLower) ||
+        (item as any).stockcode?.toLowerCase().includes(searchLower) ||
+        (item as any).description?.toLowerCase().includes(searchLower)
+      );
+      
+      if (!matches) {
+        console.log('Filtered out by search:', searchValue);
+      }
+      return matches;
+    });
+
+    console.log('After search filtering:', searchFiltered.length);
+
+    return searchFiltered.sort((a, b) => {
+      const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
+        'en-US'
+      );
+      const nameB = new Date((b as any).cashsalesdate).toLocaleDateString(
+        'en-US'
+      );
+      return nameA.localeCompare(nameB);
+    });
   }, [data, dateRange, searchValue]);
 
   const table = useReactTable({

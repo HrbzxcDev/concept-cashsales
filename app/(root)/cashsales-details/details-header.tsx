@@ -10,9 +10,21 @@ export default async function CashSalesDetailsListingPage({}: CashSalesDetailsLi
   let cashsalesdetailsData: any[] = [];
 
   try {
-    const { data } = await getCashSalesDetailsDataWithCount();
+    const { data, totalCount } = await getCashSalesDetailsDataWithCount();
     cashsalesdetailsData = data;
+    
+    // Debug logging
+    console.log('Cash Sales Details - Total count from DB:', totalCount);
+    console.log('Cash Sales Details - Data length:', data.length);
+    if (data.length > 0) {
+      console.log('Cash Sales Details - Sample data:', data[0]);
+      console.log('Cash Sales Details - Date range in data:', {
+        earliest: data[data.length - 1]?.cashsalesdate,
+        latest: data[0]?.cashsalesdate
+      });
+    }
   } catch (error) {
+    console.error('Error fetching cash sales details:', error);
     // Handle error appropriately - you might want to show a toast or error message
   }
 
