@@ -152,10 +152,33 @@ export function DataTable<TData, TValue>({
   };
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
-    from: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago (Oct 16)
-    to: new Date() // Today (Oct 17)
+    
+    from: new Date('2025-10-16'), // Oct 16, 2025
+    to: new Date('2025-10-17')    // Oct 17, 2025
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
+
+  // Helper function to parse dates consistently
+  const parseDate = (dateInput: any): string => {
+    if (!dateInput) return '';
+    
+    if (typeof dateInput === 'string') {
+      // Handle string dates - try to extract YYYY-MM-DD part
+      const match = dateInput.match(/(\d{4}-\d{2}-\d{2})/);
+      if (match) {
+        return match[1];
+      }
+      // If no match, try to parse as Date
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().split('T')[0];
+      }
+    } else if (dateInput instanceof Date) {
+      return dateInput.toISOString().split('T')[0];
+    }
+    
+    return '';
+  };
 
   const filteredData = React.useMemo(() => {
     // Debug logging
@@ -166,19 +189,39 @@ export function DataTable<TData, TValue>({
     if (data.length > 0) {
       console.log('Sample data item:', data[0]);
       console.log('Sample date:', (data[0] as any).cashsalesdate);
+      
+      // Show all unique dates in the data
+      const uniqueDates = [...new Set(data.map(item => (item as any).cashsalesdate))].sort();
+      console.log('All unique dates in database:', uniqueDates);
+      console.log('Date range selected:', dateRange?.from?.toISOString().split('T')[0], 'to', dateRange?.to?.toISOString().split('T')[0]);
     }
 
     const dateFiltered = data.filter((item) => {
       if (dateRange?.from && dateRange?.to) {
-        const cashsalesdate = new Date((item as any).cashsalesdate);
-        const isInRange = isWithinInterval(cashsalesdate, {
-          start: startOfDay(dateRange.from),
-          end: endOfDay(addDays(dateRange.to, 1))
+        // Simple approach: convert everything to Date objects and compare
+        const itemDate = new Date((item as any).cashsalesdate);
+        const fromDate = new Date(dateRange.from);
+        const toDate = new Date(dateRange.to);
+        
+        // Set time to start/end of day for accurate comparison
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(23, 59, 59, 999);
+        itemDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+        
+        const isInRange = itemDate >= fromDate && itemDate <= toDate;
+        
+        console.log('Simple date comparison:', {
+          itemDate: itemDate.toDateString(),
+          fromDate: fromDate.toDateString(),
+          toDate: toDate.toDateString(),
+          isInRange: isInRange,
+          originalItemDate: (item as any).cashsalesdate
         });
+        
         if (!isInRange) {
-          console.log('Filtered out by date:', (item as any).cashsalesdate, 'not in range', dateRange.from.toDateString(), 'to', dateRange.to.toDateString());
+          console.log('❌ Filtered out:', itemDate.toDateString(), 'not in range', fromDate.toDateString(), 'to', toDate.toDateString());
         } else {
-          console.log('Date in range:', (item as any).cashsalesdate, 'is within', dateRange.from.toDateString(), 'to', dateRange.to.toDateString());
+          console.log('✅ Date in range:', itemDate.toDateString());
         }
         return isInRange;
       }
@@ -186,6 +229,19 @@ export function DataTable<TData, TValue>({
     });
 
     console.log('After date filtering:', dateFiltered.length);
+    
+    // Show what dates are actually included after filtering
+    if (dateFiltered.length > 0) {
+      const filteredDates = [...new Set(dateFiltered.map(item => (item as any).cashsalesdate))].sort();
+      console.log('Dates included after filtering:', filteredDates);
+      console.log('Number of records per date:', filteredDates.map(date => ({
+        date: date,
+        count: dateFiltered.filter(item => (item as any).cashsalesdate === date).length
+      })));
+    } else {
+      console.log('⚠️ No data matches the selected date range!');
+      console.log('This means there is NO data for Oct 15-17 in your database');
+    }
 
     const searchFiltered = dateFiltered.filter((item) => {
       if (!searchValue) return true;
@@ -210,9 +266,17 @@ export function DataTable<TData, TValue>({
     return searchFiltered.sort((a, b) => {
       const dateA = new Date((a as any).cashsalesdate);
       const dateB = new Date((b as any).cashsalesdate);
-      return dateB.getTime() - dateA.getTime(); // Sort by most recent first
+      return dateA.getTime() - dateB.getTime(); // Sort by earliest date first (Oct 16 first)
     });
   }, [data, dateRange, searchValue]);
+
+  // Debug: Log what data is being passed to the table
+  console.log('Data being passed to table:', {
+    originalDataLength: data.length,
+    filteredDataLength: filteredData.length,
+    dateRange: dateRange,
+    searchValue: searchValue
+  });
 
   const table = useReactTable({
     data: filteredData,
@@ -928,7 +992,10 @@ export function DataTable<TData, TValue>({
           <CalendarDateRangePicker
             className="w-full"
             date={dateRange}
-            onDateChange={setDateRange}
+            onDateChange={(newDateRange) => {
+              console.log('Date range changed:', newDateRange);
+              setDateRange(newDateRange);
+            }}
           />
         </div>
         <div className="w-full min-w-0">
@@ -1026,7 +1093,16 @@ export function DataTable<TData, TValue>({
                         colSpan={columns.length}
                         className="h-24 text-center"
                       >
-                        No Results.
+                        {dateRange?.from && dateRange?.to ? (
+                          <div className="space-y-2">
+                            <p className="text-lg font-medium">No Results</p>
+                            <p className="text-sm text-muted-foreground">
+                              No data found for {dateRange.from.toLocaleDateString()} - {dateRange.to.toLocaleDateString()}
+                            </p>
+                          </div>
+                        ) : (
+                          "No Results."
+                        )}
                       </TableCell>
                     </TableRow>
                   )}
