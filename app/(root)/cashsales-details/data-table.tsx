@@ -151,7 +151,10 @@ export function DataTable<TData, TValue>({
     return monthNames[previousIndex];
   };
 
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined); // Start with no date filter
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago (Oct 16)
+    to: new Date() // Today (Oct 17)
+  });
   const [searchValue, setSearchValue] = React.useState<string>('');
 
   const filteredData = React.useMemo(() => {
@@ -173,7 +176,9 @@ export function DataTable<TData, TValue>({
           end: endOfDay(addDays(dateRange.to, 1))
         });
         if (!isInRange) {
-          console.log('Filtered out by date:', (item as any).cashsalesdate, 'not in range', dateRange.from, 'to', dateRange.to);
+          console.log('Filtered out by date:', (item as any).cashsalesdate, 'not in range', dateRange.from.toDateString(), 'to', dateRange.to.toDateString());
+        } else {
+          console.log('Date in range:', (item as any).cashsalesdate, 'is within', dateRange.from.toDateString(), 'to', dateRange.to.toDateString());
         }
         return isInRange;
       }
@@ -203,13 +208,9 @@ export function DataTable<TData, TValue>({
     console.log('After search filtering:', searchFiltered.length);
 
     return searchFiltered.sort((a, b) => {
-      const nameA = new Date((a as any).cashsalesdate).toLocaleDateString(
-        'en-US'
-      );
-      const nameB = new Date((b as any).cashsalesdate).toLocaleDateString(
-        'en-US'
-      );
-      return nameA.localeCompare(nameB);
+      const dateA = new Date((a as any).cashsalesdate);
+      const dateB = new Date((b as any).cashsalesdate);
+      return dateB.getTime() - dateA.getTime(); // Sort by most recent first
     });
   }, [data, dateRange, searchValue]);
 
