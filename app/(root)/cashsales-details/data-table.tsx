@@ -151,10 +151,15 @@ export function DataTable<TData, TValue>({
     return monthNames[previousIndex];
   };
 
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
     
-    from: new Date('2025-10-16'), // Oct 16, 2025
-    to: new Date('2025-10-17')    // Oct 17, 2025
+    return {
+      from: yesterday,
+      to: today
+    };
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
 
