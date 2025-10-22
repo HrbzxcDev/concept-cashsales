@@ -4,6 +4,7 @@ import { Montserrat } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import { ReactNode } from 'react';
 import ThemeProvider from '@/components/layout/ThemeToggle/theme-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -32,11 +33,12 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
         <body className={'overflow-hidden'}>
           <NextTopLoader showSpinner={false} />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-            <Toaster />
-         
-        </ThemeProvider>
-      </body>
+            <AuthProvider>
+              {children}
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </body>
     </html>
   );
 };

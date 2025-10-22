@@ -7,6 +7,10 @@ import {
 } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -30,7 +34,7 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { navItems } from '@/constants/data';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -38,6 +42,7 @@ import * as React from 'react';
 import { Breadcrumbs } from '../ui/breadcrumbs';
 import { Icons } from '../ui/icons';
 import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import ThemeToggle from './ThemeToggle/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 
@@ -63,6 +68,8 @@ export default function AppSidebar({
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
   const { isFetching } = useAutoFetch();
+  const { user, logout } = useAuth();
+  
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -157,16 +164,46 @@ export default function AppSidebar({
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="https://github.com/shadcn.png" />
-                      <AvatarFallback className="rounded-lg">HD</AvatarFallback>
+                      <AvatarFallback className="rounded-lg">
+                        {user?.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">HrbzxcDev</span>
+                      <span className="truncate font-semibold">
+                        {user?.name || 'User'}
+                      </span>
                       <span className="truncate text-xs">
-                        hrbzxcdev@gmail.com
+                        {user?.email || 'user@example.com'}
                       </span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56"
+                  align="end"
+                  forceMount
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user?.name || 'User'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email || 'user@example.com'}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
               </DropdownMenu>
             </SidebarMenuItem>
           </SidebarMenu>
