@@ -85,3 +85,13 @@ export const notificationsTable = pgTable('tblnotifications', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
+
+export const usersTable = pgTable('tblusers', {
+  id: uuid('id').notNull().primaryKey().defaultRandom().unique(),
+  username: varchar('username', { length: 100 }).notNull(),
+  password: varchar('password', { length: 100 }).notNull(),
+  email: varchar('email', { length: 100 }).notNull(),
+  role: varchar('role', { length: 50 }).notNull().default('Administrator'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow()
+});

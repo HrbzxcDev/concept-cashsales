@@ -83,15 +83,15 @@ export function NotificationBell({ className }: NotificationBellProps) {
   };
 
   // Fetch notifications on component mount
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  // useEffect(() => {
+  //   fetchNotifications();
+  // }, []);
 
-  // Check for new notifications periodically
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // // Check for new notifications periodically
+  // useEffect(() => {
+  //   const interval = setInterval(fetchNotifications, 30000); // Check every 30 seconds
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Close when clicking outside or pressing Escape
   useEffect(() => {
