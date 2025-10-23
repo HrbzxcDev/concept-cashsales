@@ -1,13 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { clearAuthData } from '@/lib/storage-cleanup';
 
 interface User {
   id: string;
   email: string;
   name?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -22,66 +23,50 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    // Clear any existing localStorage data on mount
-    clearAuthData();
-    setIsLoading(false);
-  }, []);
+  const user: User | null = session?.user ? {
+    id: session.user.id || '',
+    email: session.user.email || '',
+    name: session.user.name || '',
+    role: session.user.role || '',
+  } : null;
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        const userData: User = {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.username,
-        };
-        
-        setUser(userData);
-        setIsLoading(false);
-        return true;
-      } else {
-        setIsLoading(false);
+      if (result?.error) {
         return false;
       }
+
+      return true;
     } catch (error) {
-      setIsLoading(false);
+      console.error('Login error:', error);
       return false;
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    clearAuthData();
+  const logout = async () => {
+    await signOut({ redirect: false });
     router.push('/login');
   };
 
   const clearStoredData = () => {
-    clearAuthData();
+    // NextAuth handles session cleanup automatically
   };
 
   const value: AuthContextType = {
     user,
     login,
     logout,
-    isLoading,
-    isAuthenticated: !!user,
+    isLoading: status === 'loading',
+    isAuthenticated: !!session,
     clearStoredData,
   };
 
