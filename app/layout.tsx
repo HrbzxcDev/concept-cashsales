@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import { ReactNode } from 'react';
-import ThemeProvider from '@/components/layout/ThemeToggle/theme-provider';
+import Providers from '@/components/layout/providers';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { auth } from '@/lib/nextauth';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -22,6 +24,7 @@ const montserrat = Montserrat({
 });
 
 const RootLayout = async ({ children }: { children: ReactNode }) => {
+  const session = await auth();
 
   return (
     <html
@@ -31,12 +34,13 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
     >
         <body className={'overflow-hidden'}>
           <NextTopLoader showSpinner={false} />
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-            <Toaster />
-         
-        </ThemeProvider>
-      </body>
+          <Providers session={session}>
+            <AuthProvider>
+              {children}
+              <Toaster />
+            </AuthProvider>
+          </Providers>
+        </body>
     </html>
   );
 };

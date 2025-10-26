@@ -52,7 +52,7 @@ import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DateRange } from 'react-day-picker';
-import { isWithinInterval, endOfDay, startOfDay, addDays } from 'date-fns';
+// import { isWithinInterval, endOfDay, startOfDay, addDays } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -151,10 +151,15 @@ export function DataTable<TData, TValue>({
     return monthNames[previousIndex];
   };
 
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
     
-    from: new Date('2025-10-16'), // Oct 16, 2025
-    to: new Date('2025-10-17')    // Oct 17, 2025
+    return {
+      from: yesterday,
+      to: today
+    };
   });
   const [searchValue, setSearchValue] = React.useState<string>('');
 
@@ -181,20 +186,6 @@ export function DataTable<TData, TValue>({
   };
 
   const filteredData = React.useMemo(() => {
-    // Debug logging
-    console.log('Total data received:', data.length);
-    console.log('Date range:', dateRange);
-    console.log('Search value:', searchValue);
-    
-    if (data.length > 0) {
-      console.log('Sample data item:', data[0]);
-      console.log('Sample date:', (data[0] as any).cashsalesdate);
-      
-      // Show all unique dates in the data
-      const uniqueDates = [...new Set(data.map(item => (item as any).cashsalesdate))].sort();
-      console.log('All unique dates in database:', uniqueDates);
-      console.log('Date range selected:', dateRange?.from?.toISOString().split('T')[0], 'to', dateRange?.to?.toISOString().split('T')[0]);
-    }
 
     const dateFiltered = data.filter((item) => {
       if (dateRange?.from && dateRange?.to) {
@@ -210,38 +201,11 @@ export function DataTable<TData, TValue>({
         
         const isInRange = itemDate >= fromDate && itemDate <= toDate;
         
-        console.log('Simple date comparison:', {
-          itemDate: itemDate.toDateString(),
-          fromDate: fromDate.toDateString(),
-          toDate: toDate.toDateString(),
-          isInRange: isInRange,
-          originalItemDate: (item as any).cashsalesdate
-        });
         
-        if (!isInRange) {
-          console.log('❌ Filtered out:', itemDate.toDateString(), 'not in range', fromDate.toDateString(), 'to', toDate.toDateString());
-        } else {
-          console.log('✅ Date in range:', itemDate.toDateString());
-        }
         return isInRange;
       }
       return true;
     });
-
-    console.log('After date filtering:', dateFiltered.length);
-    
-    // Show what dates are actually included after filtering
-    if (dateFiltered.length > 0) {
-      const filteredDates = [...new Set(dateFiltered.map(item => (item as any).cashsalesdate))].sort();
-      console.log('Dates included after filtering:', filteredDates);
-      console.log('Number of records per date:', filteredDates.map(date => ({
-        date: date,
-        count: dateFiltered.filter(item => (item as any).cashsalesdate === date).length
-      })));
-    } else {
-      console.log('⚠️ No data matches the selected date range!');
-      console.log('This means there is NO data for Oct 15-17 in your database');
-    }
 
     const searchFiltered = dateFiltered.filter((item) => {
       if (!searchValue) return true;
@@ -255,13 +219,8 @@ export function DataTable<TData, TValue>({
         (item as any).description?.toLowerCase().includes(searchLower)
       );
       
-      if (!matches) {
-        console.log('Filtered out by search:', searchValue);
-      }
       return matches;
     });
-
-    console.log('After search filtering:', searchFiltered.length);
 
     return searchFiltered.sort((a, b) => {
       const dateA = new Date((a as any).cashsalesdate);
@@ -269,14 +228,6 @@ export function DataTable<TData, TValue>({
       return dateA.getTime() - dateB.getTime(); // Sort by earliest date first (Oct 16 first)
     });
   }, [data, dateRange, searchValue]);
-
-  // Debug: Log what data is being passed to the table
-  console.log('Data being passed to table:', {
-    originalDataLength: data.length,
-    filteredDataLength: filteredData.length,
-    dateRange: dateRange,
-    searchValue: searchValue
-  });
 
   const table = useReactTable({
     data: filteredData,
@@ -993,7 +944,7 @@ export function DataTable<TData, TValue>({
             className="w-full"
             date={dateRange}
             onDateChange={(newDateRange) => {
-              console.log('Date range changed:', newDateRange);
+              // console.log('Date range changed:', newDateRange);
               setDateRange(newDateRange);
             }}
           />
