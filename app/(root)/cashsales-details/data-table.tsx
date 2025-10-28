@@ -460,7 +460,7 @@ export function DataTable<TData, TValue>({
               <ShoppingBasket className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold dark:text-white">
                 <p>Item Summary</p>
               </h2>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -468,7 +468,7 @@ export function DataTable<TData, TValue>({
                   <>
                     <span>
                       Summary for{' '}
-                      <span className="text-lg font-medium text-white">
+                      <span className="text-lg font-medium dark:text-white">
                         {rowData?.description ||
                           rowData?.cashsalescode ||
                           'Selected Item'}
