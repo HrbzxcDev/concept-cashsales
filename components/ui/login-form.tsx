@@ -47,7 +47,8 @@ export function LoginForm({
 
   const {
     register,
-    handleSubmit,
+    trigger,
+    getValues,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -62,10 +63,41 @@ export function LoginForm({
         onLoginSuccess?.();
         router.push(redirectTo);
       } else {
-        toast.error('Invalid email or password. Please try again.');
+        toast.error('Invalid email or password. Please check your credentials and try again.');
       }
     } catch (error) {
-      toast.error('Login failed. Please try again. Error: ' + error);
+      // Handle different types of errors with specific messages
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          toast.error('Network error. Please check your internet connection and try again.');
+        } else if (error.message.includes('timeout')) {
+          toast.error('Request timed out. Please try again.');
+        } else {
+          toast.error('Login failed. Please try again.');
+        }
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
+    }
+  };
+
+  const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const isValid = await trigger();
+      if (!isValid) {
+        const firstMessage = Object.values(errors)
+          .map((e) => e?.message)
+          .find(Boolean);
+        if (firstMessage) {
+          toast.error(String(firstMessage));
+        }
+        return;
+      }
+      const values = getValues();
+      await onSubmit(values);
+    } catch (_) {
+      toast.error('Please check your inputs and try again.');
     }
   };
 
@@ -81,12 +113,12 @@ export function LoginForm({
               className="object-cover"
             />
           </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-8">
+          <form onSubmit={onFormSubmit} className="p-6 md:p-8">
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome Back</h1>
+                <h1 className="text-2xl font-semibold">Concept CashSales</h1>
                 <p className="text-muted-foreground text-balance">
-                  Login to your Concept CashSales account
+                  Login to your account
                 </p>
               </div>
               <Field>

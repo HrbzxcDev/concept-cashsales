@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      // Swallow error to avoid logging to console; UI will show toast
       return false;
     }
   };
@@ -84,3 +84,4 @@ export function useAuth() {
   }
   return context;
 }
+
