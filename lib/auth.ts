@@ -52,7 +52,7 @@ export async function createJWT(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promi
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d') // Token expires in 7 days
+    .setExpirationTime('1d') // Token expires in 1 day
     .sign(JWT_SECRET);
 
   return token;
