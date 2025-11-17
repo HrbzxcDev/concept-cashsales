@@ -63,10 +63,29 @@ export async function createJWT(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promi
  */
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      // Explicitly require expiration check
+      clockTolerance: '1m', // Allow 1 minute clock skew
+    });
+    
+    // Additional manual expiration check as a safeguard
+    if (payload.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp < now) {
+        // Token has expired
+        return null;
+      }
+    }
+    
     return payload as unknown as JWTPayload;
-  } catch (error) {
-    console.error('JWT verification failed:', error);
+  } catch (error: any) {
+    // Check if error is due to token expiration
+    // jose library throws errors with code 'ERR_JWT_EXPIRED' for expired tokens
+    if (error?.code === 'ERR_JWT_EXPIRED' || error?.message?.includes('expired')) {
+      // Token has expired
+      return null;
+    }
+    // Other JWT verification errors (invalid signature, malformed token, etc.)
     return null;
   }
 }
