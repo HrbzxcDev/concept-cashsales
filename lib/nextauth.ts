@@ -71,10 +71,10 @@ export const config = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 24 * 60 * 60, // 1 day
   },
   jwt: {
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 24 * 60 * 60, // 1 day
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -82,12 +82,32 @@ export const config = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        // Set expiration time explicitly when user signs in
+        token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day from now
       }
+      
+      // Check if token has expired on every request
+      if (token.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        if (token.exp < now) {
+          // Token has expired - don't return token data
+          // NextAuth will treat this as an invalid session
+          return { ...token, exp: 0 };
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
-      // Send properties to the client
-      if (token) {
+      // Check if token is expired
+      if (token && token.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        if (token.exp < now || token.exp === 0) {
+          // Token has expired - return null to invalidate session
+          return null as any;
+        }
+        
+        // Token is valid, set user properties
         session.user.id = token.id as string;
         session.user.role = token.role as string;
       }
