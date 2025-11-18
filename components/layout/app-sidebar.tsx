@@ -57,7 +57,7 @@ export const company = {
       className="h-8 w-8"
     />
   ),
-  version: 'Beta (3.8.6)'
+  version: 'Beta (3.9.2)'
 };
 
 export default function AppSidebar({

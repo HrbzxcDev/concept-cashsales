@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/components/providers/auth-provider';
 
 interface User {
   id: string;
@@ -16,9 +18,12 @@ interface User {
   updatedAt: string;
 }
 
+const isViewOnlyRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'User';
+const canManageUsersRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'Administrator';
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -26,13 +31,15 @@ export default function UsersPage() {
     password: '',
     role: 'Administrator'
   });
+  const { user, isLoading: authLoading } = useAuth();
+  const viewOnlyUser = isViewOnlyRole(user?.role ?? null);
+  const canManageUsers = canManageUsersRole(user?.role ?? null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async (showSpinner = false) => {
     try {
+      if (showSpinner) {
+        setUsersLoading(true);
+      }
       const response = await fetch('/api/auth/users');
       const data = await response.json();
       
@@ -44,12 +51,22 @@ export default function UsersPage() {
     } catch (error) {
       toast.error('Error fetching users');
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers(true);
+  }, [fetchUsers]);
 
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!canManageUsers) {
+      toast.error('Your role only allows viewing the site. Please contact an administrator for additional permissions.');
+      return;
+    }
+
     setCreating(true);
 
     try {
@@ -65,7 +82,7 @@ export default function UsersPage() {
 
       if (data.success) {
         toast.success('User created successfully');
-        setFormData({ username: '', email: '', password: '', role: 'Administrator' });
+        setFormData({ username: '', email: '', password: '', role: '' });
         fetchUsers();
       } else {
         toast.error(data.error || 'Failed to create user');
@@ -77,7 +94,7 @@ export default function UsersPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || usersLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -102,48 +119,61 @@ export default function UsersPage() {
             <CardDescription>Add a new user to the system</CardDescription>
           </CardHeader>
           <CardContent>
+            {viewOnlyUser && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Your role is limited to viewing the site. You can browse existing users but cannot create new ones.
+              </p>
+            )}
             <form onSubmit={createUser} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Input
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={creating} className="w-full">
-                {creating ? 'Creating...' : 'Create User'}
-              </Button>
+              <fieldset disabled={!canManageUsers} className="space-y-4">
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Administrator">Administrator</SelectItem>
+                      <SelectItem value="User">User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" disabled={creating || !canManageUsers} className="w-full">
+                  {creating ? 'Creating...' : 'Create User'}
+                </Button>
+              </fieldset>
             </form>
           </CardContent>
         </Card>

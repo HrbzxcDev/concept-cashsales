@@ -16,6 +16,13 @@ export const navItems: NavItem[] = [
     isActive: false,
     items: [] // Empty array as there are no child items for CashSales Details
   },
+  {
+    title: 'Users',
+    url: '/admin/users',
+    icon: 'user',
+    isActive: false,
+    items: [] // Empty array as there are no child items for Users
+  },
 
 
 ];
