@@ -18,7 +18,7 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'Users',
-    url: '/admin/users',
+    url: '/settings/users',
     icon: 'user',
     isActive: false,
     items: [] // Empty array as there are no child items for Users
