@@ -18,8 +18,8 @@ interface User {
   updatedAt: string;
 }
 
-const isViewOnlyRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'User';
-const canManageUsersRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'Administrator';
+const isViewOnlyRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'user';
+const canManageUsersRole = (role?: string | null) => (role?.trim().toLowerCase() ?? '') === 'administrator';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);

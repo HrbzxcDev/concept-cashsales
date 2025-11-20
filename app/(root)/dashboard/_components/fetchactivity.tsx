@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getRecentApiFetches } from '@/actions/getdata';
 import { useAutoFetch } from '@/components/providers/auto-fetch-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import {
   CheckCircle2,
   XCircle,
@@ -66,6 +67,8 @@ export default function FetchActivity() {
     to: new Date()
   });
   const { refreshTrigger } = useAutoFetch();
+  const { user } = useAuth();
+  const isAdmin = (user?.role ?? '').trim().toLowerCase() === 'administrator';
 
   const loadActivities = async () => {
     setLoading(true);
@@ -87,6 +90,7 @@ export default function FetchActivity() {
   }, [refreshTrigger]);
 
   const handleManualFetch = async () => {
+    if (!isAdmin) return;
     if (!dateRange?.from) return;
     try {
       setSubmitting(true);
@@ -139,7 +143,8 @@ export default function FetchActivity() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setManualOpen(true)}
+            disabled={!isAdmin}
+            onClick={() => isAdmin && setManualOpen(true)}
           >
             Manual Fetch
             <GitBranchPlus className="h-4 w-4" />
