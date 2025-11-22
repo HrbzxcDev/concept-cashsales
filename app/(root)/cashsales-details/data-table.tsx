@@ -71,6 +71,7 @@ import {
   getStockCodeMonthlyTransactions
 } from '@/actions/getdata';
 import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
+import { useAuth } from '@/components/providers/auth-provider';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -107,6 +108,9 @@ export function DataTable<TData, TValue>({
     return currentMonth;
   });
   const [previousMonthData, setPreviousMonthData] = React.useState<any>(null);
+
+  const { user } = useAuth();
+  const isAdmin = (user?.role ?? '').trim().toLowerCase() === 'administrator';
 
   // Function to calculate percentage change
   const calculatePercentageChange = (
@@ -356,6 +360,7 @@ export function DataTable<TData, TValue>({
           <div className="mb-4 flex items-center justify-between">
             <div className="text-lg font-semibold">Transaction Summary</div>
             <Button
+              disabled={!isAdmin}
               variant="outline"
               size="sm"
               onClick={handleViewJSON}

@@ -155,13 +155,13 @@ export default function UsersPage() {
                     required
                   />
                 </div>
-                <div>
+                <div> 
                   <Label htmlFor="role">Role</Label>
-                  <Select
+                  <Select disabled={!canManageUsers}
                     value={formData.role}
                     onValueChange={(value) => setFormData({ ...formData, role: value })}
                   >
-                    <SelectTrigger id="role">
+                    <SelectTrigger disabled={!canManageUsers} id="role">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -169,6 +169,7 @@ export default function UsersPage() {
                       <SelectItem value="User">User</SelectItem>
                     </SelectContent>
                   </Select>
+             
                 </div>
                 <Button type="submit" disabled={creating || !canManageUsers} className="w-full">
                   {creating ? 'Creating...' : 'Create User'}
