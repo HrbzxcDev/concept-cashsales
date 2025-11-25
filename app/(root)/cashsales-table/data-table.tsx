@@ -95,7 +95,7 @@ export function DataTable<TData, TValue>({
   const filterDropdownRef = React.useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
-  const isAdmin = (user?.role ?? '').trim().toLowerCase() === 'administrator';
+  const isAdmin = user?.role?.trim().toLowerCase() === 'administrator';
 
   // Close dropdown when clicking outside
   React.useEffect(() => {

@@ -20,6 +20,12 @@ interface NotificationBellProps {
   className?: string;
 }
 
+const sortNotificationsByDate = (items: Notification[]) =>
+  [...items].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
 export function NotificationBell({ className }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +45,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
       const data = await response.json();
 
       if (data.success) {
-        setNotifications(data.notifications);
+        setNotifications(sortNotificationsByDate(data.notifications));
       } else {
         console.error('Failed to fetch notifications:', data.error);
       }
@@ -88,10 +94,10 @@ export function NotificationBell({ className }: NotificationBellProps) {
   }, []);
 
   // Check for new notifications periodically
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(fetchNotifications, 30000); // Check every 30 seconds
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Close when clicking outside or pressing Escape
   useEffect(() => {

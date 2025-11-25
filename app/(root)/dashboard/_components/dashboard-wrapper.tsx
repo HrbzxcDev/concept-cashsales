@@ -118,11 +118,14 @@ export default function DashboardWrapper() {
 
   // Refresh data when auto-fetch triggers a refresh
   useEffect(() => {
+    
     if (refreshTrigger > 0) {
       // console.log('🔄 Auto-fetch triggered Dashboard refresh');
       fetchData();
     }
   }, [refreshTrigger]);
+
+  
 
   if (loading && !data) {
     return (
