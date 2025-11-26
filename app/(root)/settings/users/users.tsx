@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,6 +18,14 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/providers/auth-provider';
 
@@ -43,9 +51,13 @@ export default function UsersPage() {
     password: '',
     role: 'Administrator'
   });
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteDialogUser, setDeleteDialogUser] = useState<User | null>(null);
   const { user, isLoading: authLoading } = useAuth();
   const viewOnlyUser = isViewOnlyRole(user?.role ?? null);
   const canManageUsers = canManageUsersRole(user?.role ?? null);
+  const isEditing = Boolean(editingUserId);
 
   const fetchUsers = useCallback(async (showSpinner = false) => {
     try {
@@ -67,13 +79,37 @@ export default function UsersPage() {
     }
   }, []);
 
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const weight = (role: string) =>
+        role.trim().toLowerCase() === 'administrator' ? 0 : 1;
+
+      const weightDiff = weight(a.role) - weight(b.role);
+      if (weightDiff !== 0) {
+        return weightDiff;
+      }
+
+      return a.username.localeCompare(b.username);
+    });
+  }, [users]);
+
   useEffect(() => {
     fetchUsers(true);
   }, [fetchUsers]);
 
-  const createUser = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      role: 'Administrator'
+    });
+    setEditingUserId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!canManageUsers) {
       toast.error('Your role only allows viewing the site. Please contact an administrator for additional permissions.');
       return;
@@ -82,28 +118,119 @@ export default function UsersPage() {
     setCreating(true);
 
     try {
-      const response = await fetch('/api/auth/users', {
-        method: 'POST',
+      const basePayload = {
+        username: formData.username,
+        email: formData.email,
+        role: formData.role
+      };
+
+      const payload = isEditing
+        ? {
+            ...basePayload,
+            ...(formData.password ? { password: formData.password } : {})
+          }
+        : {
+            ...basePayload,
+            password: formData.password
+          };
+
+      const url =
+        isEditing && editingUserId
+          ? `/api/auth/users/${editingUserId}`
+          : '/api/auth/users';
+
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success('User created successfully');
-        setFormData({ username: '', email: '', password: '', role: '' });
+        toast.success(isEditing ? 'User Updated Successfully' : 'User Created Successfully');
+        resetForm();
         fetchUsers();
       } else {
-        toast.error(data.error || 'Failed to create user');
+        toast.error(
+          data.error || (isEditing ? 'Failed to Update User' : 'Failed to Create User')
+        );
       }
     } catch (error) {
-      toast.error('Error creating user');
+      toast.error(isEditing ? 'Error Updating User' : 'Error Creating User');
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleEditUser = (member: User) => {
+    if (!canManageUsers) {
+      toast.error('You do not have permission to manage users.');
+      return;
+    }
+
+    setEditingUserId(member.id);
+    setFormData({
+      username: member.username,
+      email: member.email,
+      password: '',
+      role: member.role
+    });
+  };
+
+  const handlePromptDeleteUser = (userId: string) => {
+    if (!canManageUsers) {
+      toast.error('You do not have permission to manage users.');
+      return;
+    }
+
+    const targetUser = users.find((member) => member.id === userId);
+    if (!targetUser) {
+      toast.error('Unable to find User Details.');
+      return;
+    }
+
+    setDeleteDialogUser(targetUser);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteDialogUser) {
+      return;
+    }
+
+    const userId = deleteDialogUser.id;
+    setDeletingUserId(userId);
+
+    try {
+      const response = await fetch(`/api/auth/users/${userId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('User Deleted Successfully');
+        if (editingUserId === userId) {
+          resetForm();
+        }
+        setDeleteDialogUser(null);
+        fetchUsers(true);
+      } else {
+        toast.error(data.error || 'Failed to Delete User');
+      }
+    } catch (error) {
+      toast.error('Error Deleting User');
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const closeDeleteDialog = () => {
+    if (deletingUserId) {
+      return;
+    }
+    setDeleteDialogUser(null);
   };
 
   if (authLoading || usersLoading) {
@@ -117,7 +244,8 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <>
+      <div className="grid gap-8 lg:grid-cols-2">
       <Card className="border-muted-foreground/20">
         <CardHeader>
           <CardTitle>User Management</CardTitle>
@@ -129,8 +257,13 @@ export default function UsersPage() {
               Your role is limited to viewing the site. You can browse existing users but need an administrator to grant additional permissions.
             </div>
           )}
-          <form onSubmit={createUser} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <fieldset disabled={!canManageUsers} className="space-y-6">
+              {isEditing && (
+                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-sm text-primary">
+                  Updating user. Make your changes and click Update user or cancel to return to creating accounts.
+                </div>
+              )}
               <div className="grid gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
@@ -138,7 +271,7 @@ export default function UsersPage() {
                     id="username"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    placeholder="alex.jordan"
+                    placeholder="John Doe"
                     required
                   />
                 </div>
@@ -149,21 +282,25 @@ export default function UsersPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="name@company.com"
+                    placeholder="john.doe@example.com"
                     required
                   />
                 </div>
               </div>
               <div className="grid gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{isEditing ? 'Password (optional)' : 'Password'}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Generate a secure password"
-                    required
+                    placeholder={
+                      isEditing
+                        ? 'Leave blank to keep Current Password'
+                        : 'Generate a Secure Password'
+                    }
+                    required={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
@@ -183,9 +320,35 @@ export default function UsersPage() {
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center justify-end">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    disabled={creating}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                {isEditing && editingUserId && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => handlePromptDeleteUser(editingUserId)}
+                    disabled={deletingUserId === editingUserId}
+                  >
+                    {deletingUserId === editingUserId ? 'Deleting...' : 'Delete user'}
+                  </Button>
+                )}
                 <Button type="submit" disabled={creating || !canManageUsers}>
-                  {creating ? 'Creating user...' : 'Create account'}
+                  {creating
+                    ? isEditing
+                      ? 'Updating user...'
+                      : 'Creating user...'
+                    : isEditing
+                      ? 'Update user'
+                      : 'Create account'}
                 </Button>
               </div>
             </fieldset>
@@ -199,11 +362,17 @@ export default function UsersPage() {
           <CardDescription>Current users with access to CashSales.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3 overflow-y-auto pr-1">
-            {users.map((member) => (
+          {canManageUsers && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              Double-click a team member to manage their account above.
+            </p>
+          )}
+          <div className="max-h-80 space-y-3 overflow-y-auto pr-3">
+            {sortedUsers.map((member) => (
               <div
                 key={member.id}
-                className="flex flex-wrap items-center justify-between rounded-lg border px-4 py-2"
+                onDoubleClick={() => handleEditUser(member)}
+                className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-2 transition hover:border-primary"
               >
                 <div>
                   <div className="text-sm font-medium">{member.username}</div>
@@ -223,5 +392,38 @@ export default function UsersPage() {
         </CardContent>
       </Card>
     </div>
+      <Dialog open={Boolean(deleteDialogUser)} onOpenChange={(open) => (open ? null : closeDeleteDialog())}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete user</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently remove{' '}
+              <span className="font-semibold">
+                {deleteDialogUser?.username}
+              </span>{' '}
+              ({deleteDialogUser?.email}) from CashSales.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={Boolean(deletingUserId)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={Boolean(deletingUserId)}
+            >
+              {deletingUserId ? 'Deleting...' : 'Delete user'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

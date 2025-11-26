@@ -13,7 +13,8 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="mt-10 flex flex-col gap-10 lg:flex-row">
-          <aside className="rounded-lg border bg-card p-4 lg:w-72">
+          {/* <aside className="rounded-lg border bg-card p-4 lg:w-72"> */}
+          <aside className="p-4 lg:w-72">
             <SettingsNav />
           </aside>
           <div className="flex-1">{children}</div>
