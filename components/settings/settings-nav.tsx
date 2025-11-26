@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import { Bell, CreditCard, Link2, Settings, User as UserIcon, UsersRound } from 'lucide-react';
+import { Bell, CreditCard, Link2, Settings, UsersRound } from 'lucide-react';
 
 export interface SettingsNavItem {
   label: string;
@@ -15,12 +15,11 @@ export interface SettingsNavItem {
 
 export const settingsNavItems: SettingsNavItem[] = [
   { label: 'General', description: 'Overview & preferences', icon: Settings, href: '/settings/general' },
-  { label: 'Profile', description: 'Update your profile details', icon: UserIcon, href: '/settings/profile' },
+  { label: 'Users', description: 'Manage access & roles', icon: UsersRound, href: '/settings/users' },
   { label: 'Billing', description: 'Payments & invoices', icon: CreditCard, href: '/settings/billing' },
   { label: 'Plans', description: 'Usage & plan limits', icon: UsersRound, href: '/settings/plans' },
   { label: 'Connected Apps', description: 'Integrations & tokens', icon: Link2, href: '/settings/connected-apps' },
   { label: 'Notifications', description: 'Email & alerts', icon: Bell, href: '/settings/notifications' },
-  { label: 'Users', description: 'Manage access & roles', icon: UsersRound, href: '/settings/users' }
 ];
 
 export function SettingsNav() {

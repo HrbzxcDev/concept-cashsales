@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/providers/auth-provider';
+import { Badge } from '@/components/ui/badge';
 
 interface User {
   id: string;
@@ -111,7 +112,7 @@ export default function UsersPage() {
     e.preventDefault();
 
     if (!canManageUsers) {
-      toast.error('Your role only allows viewing the site. Please contact an administrator for additional permissions.');
+      toast.error('Your role only allows viewing the site. Please contact your administrator for additional permissions.');
       return;
     }
 
@@ -379,7 +380,8 @@ export default function UsersPage() {
                   <div className="text-xs text-muted-foreground">{member.email}</div>
                 </div>
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {member.role}
+                  <Badge 
+                  variant="outline">{member.role}</Badge>
                 </span>
               </div>
             ))}
@@ -401,7 +403,7 @@ export default function UsersPage() {
               <span className="font-semibold">
                 {deleteDialogUser?.username}
               </span>{' '}
-              ({deleteDialogUser?.email}) from CashSales.
+              ({deleteDialogUser?.email}).
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
