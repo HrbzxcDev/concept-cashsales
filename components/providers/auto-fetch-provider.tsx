@@ -8,6 +8,9 @@ import {
   ReactNode
 } from 'react';
 
+import { useAuth } from './auth-provider';
+
+
 interface AutoFetchContextType {
   isEnabled: boolean;
   setIsEnabled: (enabled: boolean) => void;
@@ -42,6 +45,9 @@ export function AutoFetchProvider({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [hasTriggeredOnLoad, setHasTriggeredOnLoad] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { user } = useAuth();
+  const isAdmin = user?.role?.trim().toLowerCase() === 'administrator';
 
   const triggerRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
@@ -116,6 +122,7 @@ export function AutoFetchProvider({
 
   // Auto-trigger on page load
   useEffect(() => {
+    if (!isAdmin) return;
     if (autoTriggerOnLoad && isEnabled && !hasTriggeredOnLoad) {
       // Add a small delay to ensure the page is fully loaded
       const timer = setTimeout(() => {
@@ -125,10 +132,11 @@ export function AutoFetchProvider({
 
       return () => clearTimeout(timer);
     }
-  }, [autoTriggerOnLoad, isEnabled, hasTriggeredOnLoad]);
+  }, [autoTriggerOnLoad, isEnabled, hasTriggeredOnLoad, isAdmin]);
 
   // Auto-trigger on interval
   useEffect(() => {
+    if (!isAdmin) return;
     if (!isEnabled || fetchInterval <= 0) return;
 
     const interval = setInterval(() => {
@@ -136,14 +144,15 @@ export function AutoFetchProvider({
     }, fetchInterval);
 
     return () => clearInterval(interval);
-  }, [isEnabled, fetchInterval]);
+  }, [isEnabled, fetchInterval, isAdmin]);
 
   // Reset hasTriggeredOnLoad when the component unmounts and remounts
   useEffect(() => {
+    if (!isAdmin) return;
     return () => {
       setHasTriggeredOnLoad(false);
     };
-  }, []);
+  }, [isAdmin]);
 
   const value: AutoFetchContextType = {
     isEnabled,

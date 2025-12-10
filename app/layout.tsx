@@ -32,7 +32,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
       className={`${montserrat.className}`}
       suppressHydrationWarning={true}
     >
-        <body className={'overflow-hidden'}>
+        <body className="h-screen overflow-y-hidden">
           <NextTopLoader showSpinner={false} />
           <Providers session={session}>
             <AuthProvider>

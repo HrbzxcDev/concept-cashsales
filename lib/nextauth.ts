@@ -78,39 +78,48 @@ export const config = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Persist the OAuth access_token and or the user id to the token right after signin
+      // Persist user data to token right after signin
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        // Set expiration time explicitly when user signs in
-        token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day from now
       }
       
       // Check if token has expired on every request
+      // NextAuth automatically sets token.exp based on jwt.maxAge, but we verify it here
       if (token.exp) {
         const now = Math.floor(Date.now() / 1000);
         if (token.exp < now) {
-          // Token has expired - don't return token data
-          // NextAuth will treat this as an invalid session
-          return { ...token, exp: 0 };
+          // Token has expired - remove user data to invalidate session
+          delete token.id;
+          delete token.role;
+          delete token.email;
+          delete token.name;
+          token.exp = 0;
         }
       }
       
       return token;
     },
     async session({ session, token }) {
-      // Check if token is expired
-      if (token && token.exp) {
-        const now = Math.floor(Date.now() / 1000);
-        if (token.exp < now || token.exp === 0) {
-          // Token has expired - return null to invalidate session
-          return null as any;
-        }
-        
-        // Token is valid, set user properties
-        session.user.id = token.id as string;
+      // Check if token exists, has user data, and is not expired
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = !token || !token.exp || token.exp === 0 || token.exp < now;
+      const hasUserData = token && token.id;
+      
+      if (isExpired || !hasUserData) {
+        // Token is expired or invalid - clear session user data
+        // Setting id to empty string will make middleware check fail
+        session.user.id = '';
+        session.user.role = undefined;
+        return session;
+      }
+      
+      // Token is valid, set user properties
+      session.user.id = token.id as string;
+      if (token.role) {
         session.user.role = token.role as string;
       }
+      
       return session;
     },
   },

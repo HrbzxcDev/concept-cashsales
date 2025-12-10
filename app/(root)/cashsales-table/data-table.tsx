@@ -59,6 +59,7 @@ import type {
   CashSaleDetailLine
 } from '@/actions/cashsales-client';
 import { fetchCashSaleDetailByCode } from '@/actions/cashsales-client';
+import { useAuth } from '@/components/providers/auth-provider';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -92,6 +93,9 @@ export function DataTable<TData, TValue>({
   >('all');
   const [filterDropdownOpen, setFilterDropdownOpen] = React.useState(false);
   const filterDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const { user } = useAuth();
+  const isAdmin = user?.role?.trim().toLowerCase() === 'administrator';
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -225,6 +229,7 @@ export function DataTable<TData, TValue>({
           <div className="mb-4 flex items-center justify-between">
             <div className="text-lg font-semibold">Transaction Summary</div>
             <Button
+              disabled={!isAdmin}
               variant="outline"
               size="sm"
               onClick={handleViewJSON}

@@ -11,13 +11,16 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   );
 
+  // Check if user is authenticated (session exists and has user data)
+  const isAuthenticated = session && session.user && session.user.id;
+
   // If accessing a protected route without authentication
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // If accessing login page while authenticated, redirect to dashboard
-  if (request.nextUrl.pathname === '/login' && session) {
+  if (request.nextUrl.pathname === '/login' && isAuthenticated) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
